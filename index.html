@@ -121,5 +121,34 @@
       </div>
     </form>
   </dialog>
+  
+  <!-- Setup dialog -->
+<dialog id="setupDlg" aria-label="New game setup">
+  <form method="dialog" class="dialog-card">
+    <h3>New Game Setup</h3>
+
+    <label class="tiny">Players (comma-separated)</label>
+    <input type="text" id="playersInput" class="input" value="You, Friend" />
+
+    <div class="row">
+      <div style="flex:1">
+        <label class="tiny">Win points</label>
+        <input type="number" id="winPointsInput" class="input" min="5" max="50" />
+      </div>
+      <div style="flex:1">
+        <label class="tiny">Round length (seconds)</label>
+        <input type="number" id="roundSecondsInput" class="input" min="30" max="600" />
+      </div>
+    </div>
+
+    <p class="tiny muted">Hepner Bell interrupts automatically every few minutes.</p>
+
+    <div class="dialog-actions">
+      <button value="cancel" class="btn">Cancel</button>
+      <button value="begin" class="btn primary">Begin</button>
+    </div>
+  </form>
+</dialog>
+
 </body>
 </html>
