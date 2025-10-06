@@ -3,7 +3,7 @@
 Lightweight browser game + resume site. No build tools. Deployed with GitHub Pages.
 
 ## Live Site
-`https://<your-username>.github.io/SDSU-Game/`
+`https://<ethangarc1a>.github.io/SDSU-Game/`
 
 ## Folders & Files
 - `index.html` – Game UI
