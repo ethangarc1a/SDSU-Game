@@ -30,6 +30,9 @@
       crowdMax: 10,
       crowdReset: 3,
     },
+    options: {
+  keyboardShortcuts: true,
+   },
   };
 
   // ---------- Elements ----------
@@ -62,6 +65,16 @@
     playersInput: $('#playersInput'),
     winPointsInput: $('#winPointsInput'),
     roundSecondsInput: $('#roundSecondsInput'),
+
+    howToLink: $('#howToLink'),
+optionsLink: $('#optionsLink'),
+howToDlg: $('#howToDlg'),
+optionsDlg: $('#optionsDlg'),
+optKeyboard: $('#optKeyboard'),
+optBell: $('#optBell'),
+optCrowdMax: $('#optCrowdMax'),
+optCrowdReset: $('#optCrowdReset'),
+
   };
 
   // ---------- Utilities ----------
