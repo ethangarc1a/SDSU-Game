@@ -103,6 +103,11 @@ h2{ margin: 0 0 6px; font-size: clamp(20px, 3vw, 28px); }
 .btn.primary{ border-color: var(--accent); color: var(--panel); background: var(--accent); }
 .btn.primary:disabled{ color: var(--panel); }
 
+.input{
+  border:1px solid var(--border); background:var(--panel); color:var(--text);
+  padding:8px 10px; border-radius:10px; min-width: 160px;
+}
+
 .rules{ margin: 8px 0 0 18px; }
 .rules li{ margin: 6px 0; }
 
@@ -122,15 +127,11 @@ dialog{
 .hud { margin-bottom: 8px; }
 .crowd-wrap { display:flex; align-items:center; gap:8px; }
 progress { inline-size: 120px; block-size: 10px; }
-.input{
-  border:1px solid var(--border); background:var(--panel); color:var(--text);
-  padding:8px 10px; border-radius:10px; min-width: 160px;
-}
 .players{
   display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:10px;
 }
 .player{
-  border:1px solid var(--border); border-radius:12px; padding:10px; background:var(--panel);
+  border:1px solid var(--border); border-radius:12px; padding:10px; background: var(--panel);
   display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center;
 }
 .player .name{ font-weight:700; }
@@ -149,5 +150,4 @@ kbd{
   font-size: 12px; background: var(--panel);
 }
 h4{ margin:12px 0 6px; font-size: 14px; }
-
 
