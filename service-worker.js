@@ -1,10 +1,10 @@
 /* Simple offline cache for SDSU Game */
-const VERSION = 'v1';
+const VERSION = 'v3';
 const CACHE = `sdsu-${VERSION}`;
 const CORE = [
   './',
   './index.html',
-  './styles.css',
+  './styles.css?v=3',
   './app.js',
   './deck.js',
   './resume.html',
@@ -45,3 +45,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
