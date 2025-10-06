@@ -1,13 +1,40 @@
 (function(){
+  // ---------- Quick DOM helpers ----------
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
+  // ---------- State ----------
   const state = {
-    mode: 'sober',          // 'sober' | 'party'
-    ageVerified: false,     // set true if user confirms 21+
+    // from Step 2
+    mode: 'sober',
+    ageVerified: false,
+
+    // new Step 4
+    players: [],             // [{id, name, points, tokens:{skip:boolean, boost:boolean}}]
+    drawPile: [],            // array of cards (shuffled)
+    discardPile: [],
+    currentCard: null,
+    round: 1,
+    crowd: 0,
+    skipArmedBy: null,       // playerId who will skip the next card
+    pendingBellCard: null,   // holds a Hepner Bell card when interrupt fires
+    timers: {
+      roundLeft: 0,          // seconds left in current round
+      tickId: null,
+      nextBellAt: 0,         // epoch ms when next bell should fire
+    },
+    settings: {              // defaults filled from DECK.config at boot
+      winPoints: 10,
+      roundSeconds: 90,
+      bellIntervalSeconds: 180,
+      crowdMax: 10,
+      crowdReset: 3,
+    },
   };
 
+  // ---------- Elements ----------
   const els = {
+    // From Step 2
     year: $('#year'),
     modeNote: $('#modeNote'),
     modeButtons: $$('.seg-btn'),
@@ -15,19 +42,83 @@
     nextBtn: $('#nextBtn'),
     card: $('#card'),
     ageGate: $('#ageGate'),
+
+    // New Step 4
+    timer: $('#timer'),
+    roundLabel: $('#roundLabel'),
+    crowdBar: $('#crowdBar'),
+    crowdVal: $('#crowdVal'),
+    crowdPlus: $('#crowdPlus'),
+    crowdMinus: $('#crowdMinus'),
+    playersWrap: $('#players'),
+    addPlayerBtn: $('#addPlayerBtn'),
+    newPlayerName: $('#newPlayerName'),
+    resetScoresBtn: $('#resetScoresBtn'),
+    skipSelect: $('#skipSelect'),
+    useSkipBtn: $('#useSkipBtn'),
+    skipArmedNote: $('#skipArmedNote'),
+
+    setupDlg: $('#setupDlg'),
+    playersInput: $('#playersInput'),
+    winPointsInput: $('#winPointsInput'),
+    roundSecondsInput: $('#roundSecondsInput'),
   };
 
+  // ---------- Utilities ----------
+  const rand = (n) => Math.floor(Math.random()*n);
+  const shuffle = (arr) => {
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  };
+  const fmtTime = (s) => {
+    if (s < 0) s = 0;
+    const m = Math.floor(s/60).toString().padStart(1,'0');
+    const sec = (s%60).toString().padStart(2,'0');
+    return `${m}:${sec}`;
+  };
+
+  // ---------- Persistence ----------
   function loadState(){
     try{
       const saved = JSON.parse(localStorage.getItem('sdsuGameState') || '{}');
       if(saved.mode) state.mode = saved.mode;
       if(saved.ageVerified) state.ageVerified = !!saved.ageVerified;
-    }catch{ /* ignore */ }
+
+      const game = JSON.parse(localStorage.getItem('sdsuGameV2') || '{}');
+      if(game && game.players){
+        Object.assign(state, game);
+      }
+    }catch{/* ignore */}
   }
   function saveState(){
-    localStorage.setItem('sdsuGameState', JSON.stringify(state));
+    const snapshot = {
+      // don’t persist ticking interval IDs
+      players: state.players,
+      drawPile: state.drawPile,
+      discardPile: state.discardPile,
+      currentCard: state.currentCard,
+      round: state.round,
+      crowd: state.crowd,
+      skipArmedBy: state.skipArmedBy,
+      pendingBellCard: state.pendingBellCard,
+      timers: {
+        roundLeft: state.timers.roundLeft,
+        nextBellAt: state.timers.nextBellAt,
+      },
+      settings: state.settings,
+      mode: state.mode,
+      ageVerified: state.ageVerified,
+    };
+    localStorage.setItem('sdsuGameV2', JSON.stringify(snapshot));
+    // keep Step 2’s simpler state for mode/age gate
+    localStorage.setItem('sdsuGameState', JSON.stringify({mode: state.mode, ageVerified: state.ageVerified}));
   }
 
+  // ---------- Mode handling (from Step 2, with small tweaks) ----------
   function reflectMode(){
     document.documentElement.setAttribute('data-mode', state.mode);
     els.modeButtons.forEach(b=>{
@@ -35,81 +126,423 @@
       b.classList.toggle('is-active', active);
       b.setAttribute('aria-pressed', String(active));
     });
-    if(state.mode === 'sober'){
-      els.modeNote.textContent = 'Sober Mode swaps alcohol actions for points, water sips, or mini-challenges. Please play responsibly.';
-    }else{
-      els.modeNote.textContent = 'Party Mode is for 21+ players only. Hydrate, know your limits, and never drink and drive.';
-    }
+    els.modeNote.textContent =
+      state.mode === 'sober'
+        ? 'Sober Mode swaps alcohol actions for points, water sips, or mini-challenges. Please play responsibly.'
+        : 'Party Mode is for 21+ players only. Hydrate, know your limits, and never drink and drive.';
+    saveState();
   }
-
   function requestPartyMode(){
-    if(state.ageVerified){
-      setMode('party');
-      return;
-    }
-    // Open age gate
-    if(typeof els.ageGate.showModal === 'function'){
-      els.ageGate.showModal();
-    }else{
-      // Fallback: emulate modal
-      els.ageGate.setAttribute('open','');
-    }
+    if(state.ageVerified){ setMode('party'); return; }
+    if(typeof els.ageGate.showModal === 'function'){ els.ageGate.showModal(); }
+    else { els.ageGate.setAttribute('open',''); }
   }
-
   function setMode(mode){
     state.mode = mode;
-    saveState();
     reflectMode();
   }
 
-  function attachEvents(){
-    els.modeButtons.forEach(btn=>{
+  // ---------- Setup / Reset ----------
+  function openSetup(){
+    // prime inputs from deck config / existing settings
+    const cfg = window.DECK?.config || {};
+    els.winPointsInput.value = state.settings.winPoints || cfg.winPoints || 10;
+    els.roundSecondsInput.value = state.settings.roundSeconds || cfg.roundSeconds || 90;
+    if(typeof els.setupDlg.showModal === 'function') els.setupDlg.showModal();
+    else els.setupDlg.setAttribute('open','');
+  }
+
+  function beginGame(){
+    const names = (els.playersInput.value || '').split(',')
+      .map(s=>s.trim()).filter(Boolean);
+    const seen = new Set();
+    state.players = names.map((n,i)=>({
+      id: `${Date.now()}_${i}`,
+      name: seen.has(n) ? `${n} ${i+1}` : (seen.add(n), n),
+      points: 0,
+      tokens: { skip:false, boost:false },
+    }));
+    if(state.players.length === 0){
+      state.players = [{id:'p1', name:'You', points:0, tokens:{skip:false, boost:false}}];
+    }
+
+    state.settings.winPoints = clampInt(els.winPointsInput.value, 5, 50, window.DECK.config.winPoints);
+    state.settings.roundSeconds = clampInt(els.roundSecondsInput.value, 30, 600, window.DECK.config.roundSeconds);
+
+    // build deck: exclude auto-trigger card(s)
+    const all = (window.DECK?.cards || []).slice();
+    const normal = all.filter(c=>!c.triggersOnCrowdFull);
+    state.drawPile = shuffle(normal);
+    state.discardPile = [];
+    state.currentCard = null;
+    state.crowd = 0;
+    state.round = 1;
+    state.skipArmedBy = null;
+    state.pendingBellCard = null;
+
+    startRound();
+    renderAll();
+    drawNext(); // show first card
+    saveState();
+  }
+
+  function clampInt(s, min, max, fallback){
+    const n = parseInt(s,10);
+    if(Number.isFinite(n)) return Math.min(max, Math.max(min, n));
+    return fallback ?? min;
+  }
+
+  function startRound(){
+    state.timers.roundLeft = state.settings.roundSeconds;
+    scheduleNextBell();
+    if(state.timers.tickId) clearInterval(state.timers.tickId);
+    state.timers.tickId = setInterval(tick, 1000);
+    els.nextBtn.disabled = false;
+  }
+
+  function endRound(){
+    if(state.timers.tickId){
+      clearInterval(state.timers.tickId);
+      state.timers.tickId = null;
+    }
+    els.nextBtn.disabled = true;
+    renderCardMessage('⏰ Round over',
+      'Tap “New Game / Round” to start another round. You can keep scores, or reset them below.');
+  }
+
+  // ---------- Drawing / Interrupts ----------
+  function drawNext(){
+    // If a bell interrupt is pending, show that first
+    if(state.pendingBellCard){
+      const bell = state.pendingBellCard;
+      state.pendingBellCard = null;
+      renderCard(bell, true);
+      applyCrowd(bell.crowdDelta || 0);
+      saveState();
+      return;
+    }
+
+    // If a Skip was armed, consume it and skip one card
+    if(state.skipArmedBy){
+      if(state.drawPile.length){
+        state.discardPile.push(state.drawPile.shift()); // skip silently
+      }
+      // clear skip token from the player who armed it
+      const p = state.players.find(p=>p.id===state.skipArmedBy);
+      if(p){ p.tokens.skip = false; }
+      state.skipArmedBy = null;
+      renderSkipNote(); // clear note
+    }
+
+    if(!state.drawPile.length){
+      // reshuffle discard into draw (without last shown card)
+      state.drawPile = shuffle(state.discardPile);
+      state.discardPile = [];
+    }
+    const card = state.drawPile.shift();
+    state.currentCard = card;
+    state.discardPile.push(card);
+
+    renderCard(card, false);
+
+    // Apply crowd delta (if any)
+    applyCrowd(card.crowdDelta || 0);
+
+    // Win check (after each card you might award points; win is checked when points change)
+    saveState();
+  }
+
+  function scheduleNextBell(){
+    const now = Date.now();
+    state.timers.nextBellAt = now + (state.settings.bellIntervalSeconds * 1000);
+  }
+
+  function fireBellInterrupt(){
+    const bellCards = (window.DECK.cards || []).filter(c=>c.category === 'Hepner Bell');
+    if(!bellCards.length) return;
+    state.pendingBellCard = bellCards[rand(bellCards.length)];
+    scheduleNextBell();
+  }
+
+  function applyCrowd(delta){
+    if(!delta) { renderCrowd(); return; }
+    state.crowd = Math.max(0, Math.min(state.settings.crowdMax, state.crowd + delta));
+    renderCrowd();
+
+    // Storm the Court when crowd full
+    if(state.crowd >= state.settings.crowdMax){
+      const storm = (window.DECK.cards || []).find(c=>c.triggersOnCrowdFull);
+      if(storm){
+        renderCard(storm, true);
+        // execute the reset
+        state.crowd = state.settings.crowdReset;
+        renderCrowd();
+      }
+    }
+  }
+
+  // ---------- Scoring / Tokens ----------
+  function addPoints(playerId, delta){
+    const p = state.players.find(p=>p.id===playerId);
+    if(!p) return;
+
+    let actual = delta;
+    if(delta > 0 && p.tokens.boost){
+      actual += 2;           // Boost bonus
+      p.tokens.boost = false;
+    }
+    p.points = Math.max(0, p.points + actual);
+    renderPlayers();
+
+    // Win?
+    if(p.points >= state.settings.winPoints){
+      renderCardMessage('🏆 We have a winner!',
+        `${escapeHtml(p.name)} reached ${state.settings.winPoints} points. Start a new round or reset scores to play again.`);
+      els.nextBtn.disabled = true;
+    }
+    saveState();
+  }
+
+  function armSkip(playerId){
+    const p = state.players.find(p=>p.id===playerId);
+    if(!p || !p.tokens.skip) return;
+    state.skipArmedBy = p.id;
+    renderSkipNote();
+    saveState();
+  }
+  function renderSkipNote(){
+    if(!state.skipArmedBy) { els.skipArmedNote.textContent = ''; return; }
+    const p = state.players.find(x=>x.id===state.skipArmedBy);
+    els.skipArmedNote.textContent = p ? `(Next card will be skipped by ${p.name})` : '';
+  }
+
+  function grantToken(playerId, token){
+    const p = state.players.find(p=>p.id===playerId);
+    if(!p) return;
+    if(token === 'skip') p.tokens.skip = true;
+    if(token === 'boost') p.tokens.boost = true;
+    renderPlayers();
+    saveState();
+  }
+
+  // ---------- Rendering ----------
+  function renderAll(){
+    reflectMode();
+    renderPlayers();
+    renderCrowd();
+    renderTimer();
+    renderSkipOptions();
+  }
+
+  function renderCard(card, isInterrupt){
+    const modeText = card.actions?.[state.mode] || '';
+    const badge = isInterrupt ? `<span class="badge">Interrupt</span>` : '';
+    const tokenUi = card.token ? renderTokenUi(card.token) : '';
+
+    els.card.innerHTML = `
+      <div class="card-title">${badge} ${escapeHtml(card.category)} • ${escapeHtml(card.title)}</div>
+      <p class="card-body">${escapeHtml(card.text)}</p>
+      <p class="tiny"><strong>Action (${state.mode === 'party' ? '21+ Party' : 'Sober'}):</strong> ${escapeHtml(modeText)}</p>
+      ${card.crowdDelta ? `<p class="tiny muted">Crowd ${card.crowdDelta>0?'+':''}${card.crowdDelta} auto-applied.</p>` : ''}
+      ${tokenUi}
+    `;
+
+    // Wire up token grant (delegated)
+    const grantBtn = $('#grantTokenBtn', els.card);
+    if(grantBtn){
+      grantBtn.addEventListener('click', ()=>{
+        const sel = $('#grantTokenSelect', els.card);
+        const pid = sel?.value;
+        if(pid) grantToken(pid, grantBtn.dataset.token);
+      });
+    }
+  }
+
+  function renderTokenUi(token){
+    if(!state.players.length) return '';
+    const opts = state.players.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    const label = token === 'skip' ? 'Skip' : token === 'boost' ? 'Boost' : token;
+    return `
+      <div class="tiny" style="margin-top:8px;">
+        <span class="badge">Trolley Token: ${escapeHtml(label)}</span>
+        <div class="row" style="margin-top:4px;">
+          <select id="grantTokenSelect" class="input">${opts}</select>
+          <button id="grantTokenBtn" class="btn" data-token="${escapeHtml(token)}">Grant</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCardMessage(title, body){
+    els.card.innerHTML = `
+      <div class="card-title">${escapeHtml(title)}</div>
+      <p class="card-body">${escapeHtml(body)}</p>
+    `;
+  }
+
+  function renderPlayers(){
+    if(!els.playersWrap) return;
+    els.playersWrap.innerHTML = state.players.map(p=>{
+      const badges = [
+        p.tokens.skip ? `<span class="badge">Skip</span>` : '',
+        p.tokens.boost ? `<span class="badge">Boost</span>` : '',
+      ].join('');
+      return `
+        <div class="player" data-id="${p.id}">
+          <div class="name" contenteditable="true" spellcheck="false" title="Click to edit name">${escapeHtml(p.name)}</div>
+          <div class="badges">${badges}</div>
+          <div class="pts">Pts: <strong>${p.points}</strong></div>
+          <div class="actions">
+            <button class="btn tinybtn" data-delta="1">+1</button>
+            <button class="btn tinybtn" data-delta="-1">-1</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // name edits
+    $$('.player .name', els.playersWrap).forEach(el=>{
+      el.addEventListener('blur', ()=>{
+        const card = el.closest('.player'); const id = card?.dataset.id;
+        const p = state.players.find(p=>p.id===id); if(!p) return;
+        p.name = el.textContent.trim() || p.name;
+        saveState(); renderSkipOptions();
+      });
+    });
+    // +/- handlers
+    $$('.player .actions .btn', els.playersWrap).forEach(btn=>{
       btn.addEventListener('click', ()=>{
-        const targetMode = btn.dataset.mode;
-        if(targetMode === 'party'){
-          requestPartyMode();
-        }else{
-          setMode('sober');
-        }
+        const delta = parseInt(btn.dataset.delta,10);
+        const id = btn.closest('.player')?.dataset.id;
+        addPoints(id, delta);
+        renderSkipOptions();
       });
     });
 
-    els.ageGate?.addEventListener('close', ()=>{
-      if(els.ageGate.returnValue === 'yes'){
-        state.ageVerified = true;
-        saveState();
-        setMode('party');
-      }else{
-        setMode('sober');
-      }
-    });
-
-    els.startBtn.addEventListener('click', ()=>{
-      // Placeholder: real game init comes in Step 3–4
-      els.card.innerHTML = `
-        <div class="card-title">Game initialized</div>
-        <p class="card-body">Great! In the next step we’ll add the SDSU deck, timers, and scoring. For now, “Next” is disabled.</p>
-      `;
-      els.nextBtn.disabled = true; // will enable when logic exists
-    });
-
-    els.nextBtn.addEventListener('click', ()=>{
-      // Placeholder for Step 4 draw action
-      // no-op
-    });
+    renderSkipOptions();
   }
 
+  function renderSkipOptions(){
+    if(!els.skipSelect) return;
+    const options = state.players
+      .filter(p=>p.tokens.skip)
+      .map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+      .join('');
+    els.skipSelect.innerHTML = options || `<option value="">(no Skip tokens)</option>`;
+  }
+
+  function renderCrowd(){
+    els.crowdBar.max = state.settings.crowdMax;
+    els.crowdBar.value = state.crowd;
+    els.crowdVal.textContent = `${state.crowd}/${state.settings.crowdMax}`;
+  }
+
+  function renderTimer(){
+    els.timer.textContent = fmtTime(state.timers.roundLeft);
+    els.roundLabel.textContent = String(state.round);
+  }
+
+  // ---------- Tick loop ----------
+  function tick(){
+    // timer
+    state.timers.roundLeft -= 1;
+    renderTimer();
+    if(state.timers.roundLeft <= 0){
+      endRound();
+      saveState();
+      return;
+    }
+    // bell
+    if(Date.now() >= state.timers.nextBellAt && !state.pendingBellCard){
+      fireBellInterrupt();
+      // Auto-render the interrupt immediately (pause nothing; it just shows a card)
+      if(state.pendingBellCard){
+        const bell = state.pendingBellCard;
+        state.pendingBellCard = null;
+        renderCard(bell, true);
+        applyCrowd(bell.crowdDelta || 0);
+      }
+    }
+  }
+
+  // ---------- Events ----------
+  function attachEvents(){
+    // mode buttons from Step 2
+    els.modeButtons.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const target = btn.dataset.mode;
+        if(target === 'party') requestPartyMode(); else setMode('sober');
+      });
+    });
+    els.ageGate?.addEventListener('close', ()=>{
+      if(els.ageGate.returnValue === 'yes'){
+        state.ageVerified = true; saveState(); setMode('party');
+      }else setMode('sober');
+    });
+
+    // game control
+    els.startBtn.addEventListener('click', openSetup);
+    els.setupDlg?.addEventListener('close', ()=>{
+      if(els.setupDlg.returnValue === 'begin') beginGame();
+    });
+
+    els.nextBtn.addEventListener('click', drawNext);
+
+    els.crowdPlus.addEventListener('click', ()=>{ applyCrowd(+1); saveState(); });
+    els.crowdMinus.addEventListener('click', ()=>{ applyCrowd(-1); saveState(); });
+
+    els.addPlayerBtn.addEventListener('click', ()=>{
+      const name = (els.newPlayerName.value || '').trim();
+      if(!name) return;
+      state.players.push({id:`p${Date.now()}`, name, points:0, tokens:{skip:false, boost:false}});
+      els.newPlayerName.value = '';
+      renderPlayers(); saveState();
+    });
+
+    els.resetScoresBtn.addEventListener('click', ()=>{
+      state.players.forEach(p=>p.points=0);
+      renderPlayers(); saveState();
+    });
+
+    els.useSkipBtn.addEventListener('click', ()=>{
+      const pid = els.skipSelect.value;
+      if(!pid) return;
+      armSkip(pid);
+    });
+
+    // delegate coin/mini actions later if needed (we keep manual for now)
+  }
+
+  // ---------- Security / helpers ----------
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#39;');
+  }
+
+  // ---------- Boot ----------
   function boot(){
     els.year.textContent = new Date().getFullYear();
+
+    // import deck config defaults
+    if(window.DECK?.config){
+      const cfg = window.DECK.config;
+      state.settings.winPoints = cfg.winPoints ?? state.settings.winPoints;
+      state.settings.roundSeconds = cfg.roundSeconds ?? state.settings.roundSeconds;
+      state.settings.bellIntervalSeconds = cfg.bellIntervalSeconds ?? state.settings.bellIntervalSeconds;
+      state.settings.crowdMax = cfg.crowdMax ?? state.settings.crowdMax;
+      state.settings.crowdReset = cfg.crowdReset ?? state.settings.crowdReset;
+    }
+
     loadState();
     reflectMode();
     attachEvents();
+    renderAll();
   }
-
-  /* ==== Future Step Stubs (to be filled in next steps) ==== */
-  // function initGame(){ /* build deck, shuffle, timers, etc. */ }
-  // function drawCard(){ /* pop next prompt and render */ }
-  // function startRoundTimer(ms){ /* Hepner Bell timed rounds */ }
 
   document.addEventListener('DOMContentLoaded', boot);
 })();
+
