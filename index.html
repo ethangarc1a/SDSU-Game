@@ -47,18 +47,49 @@
     </section>
 
     <section class="panel">
-      <h3 class="section-title">Game</h3>
-      <div class="game">
-        <div id="card" class="card" aria-live="polite">
-          <div class="card-title">Not started</div>
-          <p class="card-body muted">Press <em>Start</em> to initialize (actual gameplay arrives in Step 3–4).</p>
-        </div>
-        <div class="controls">
-          <button id="startBtn" class="btn primary">Start</button>
-          <button id="nextBtn" class="btn" disabled>Next</button>
-        </div>
+  <h3 class="section-title">Game</h3>
+
+  <!-- HUD -->
+  <div class="hud row between center">
+    <div class="tiny muted">Round Timer: <strong id="timer">--:--</strong></div>
+    <div class="tiny muted">Round: <strong id="roundLabel">1</strong></div>
+    <div class="tiny muted crowd-wrap">
+      Crowd: <strong id="crowdVal">0/10</strong>
+      <progress id="crowdBar" max="10" value="0" aria-label="Crowd meter"></progress>
+      <button id="crowdPlus" class="btn tinybtn" title="Crowd +1">+1</button>
+      <button id="crowdMinus" class="btn tinybtn" title="Crowd -1">-1</button>
+    </div>
+  </div>
+
+  <div class="game">
+    <div id="card" class="card" aria-live="polite">
+      <div class="card-title">Not started</div>
+      <p class="card-body muted">Press <em>New Game / Round</em> to initialize the engine.</p>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn" class="btn primary">New Game / Round</button>
+      <button id="nextBtn" class="btn" disabled>Next</button>
+
+      <div class="row">
+        <span class="tiny muted">Use Skip:</span>
+        <select id="skipSelect" class="input"></select>
+        <button id="useSkipBtn" class="btn">Use</button>
+        <span id="skipArmedNote" class="tiny muted" aria-live="polite"></span>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
+
+    <section class="panel">
+  <h3 class="section-title">Scoreboard</h3>
+  <div id="players" class="players"></div>
+  <div class="row">
+    <input id="newPlayerName" class="input" placeholder="Add player name" />
+    <button id="addPlayerBtn" class="btn">Add</button>
+    <button id="resetScoresBtn" class="btn">Reset Scores</button>
+  </div>
+</section>
 
     <section class="panel">
       <h3 class="section-title">SDSU-flavored rule preview (coming next step)</h3>
