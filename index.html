@@ -4,26 +4,21 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SDSU Edition — Party & Sober Modes</title>
-  <meta name="description" content="A lightweight web game with Sober and 21+ Party modes, plus an engineering resume (coming soon)." />
+  <meta name="description" content="A lightweight web game with Sober and 21+ Party modes, plus an engineering resume." />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%2780%27 x=%2710%27 font-size=%2780%27%3E🎓%3C/text%3E%3C/svg%3E">
-  
- <script defer src="./deck.js"></script>
-<script defer src="./app.js"></script>
-
+  <script defer src="./deck.js"></script>
   <script defer src="./app.js"></script>
 </head>
 <body>
   <header class="site-header">
     <h1 class="brand">SDSU Game</h1>
-    
     <nav class="nav">
-  <a href="./resume.html" class="nav-link">Resume</a>
-  <a href="#" id="howToLink" class="nav-link">How to Play</a>
-  <a href="#" id="optionsLink" class="nav-link">Options</a>
-  <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
-</nav>
-
+      <a href="./resume.html" class="nav-link">Resume</a>
+      <a href="#" id="howToLink" class="nav-link">How to Play</a>
+      <a href="#" id="optionsLink" class="nav-link">Options</a>
+      <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+    </nav>
   </header>
 
   <main class="container" role="main">
@@ -31,7 +26,7 @@
       <p class="kicker">No installs • Vanilla JS • Mobile-first</p>
       <h2>San Diego State Edition — Play in Sober or 21+ Party Mode</h2>
       <p class="muted">
-        This step sets up structure and UI. Game logic & unique rules land in the next step.
+        This app is data-driven. Use “New Game / Round” to start; “Next” draws the next card.
       </p>
     </section>
 
@@ -48,53 +43,56 @@
       </p>
     </section>
 
+    <!-- GAME -->
     <section class="panel">
-  <h3 class="section-title">Game</h3>
+      <h3 class="section-title">Game</h3>
 
-  <!-- HUD -->
-  <div class="hud row between center">
-    <div class="tiny muted">Round Timer: <strong id="timer">--:--</strong></div>
-    <div class="tiny muted">Round: <strong id="roundLabel">1</strong></div>
-    <div class="tiny muted crowd-wrap">
-      Crowd: <strong id="crowdVal">0/10</strong>
-      <progress id="crowdBar" max="10" value="0" aria-label="Crowd meter"></progress>
-      <button id="crowdPlus" class="btn tinybtn" title="Crowd +1">+1</button>
-      <button id="crowdMinus" class="btn tinybtn" title="Crowd -1">-1</button>
-    </div>
-  </div>
-
-  <div class="game">
-    <div id="card" class="card" aria-live="polite">
-      <div class="card-title">Not started</div>
-      <p class="card-body muted">Press <em>New Game / Round</em> to initialize the engine.</p>
-    </div>
-
-    <div class="controls">
-      <button id="startBtn" class="btn primary">New Game / Round</button>
-      <button id="nextBtn" class="btn" disabled>Next</button>
-
-      <div class="row">
-        <span class="tiny muted">Use Skip:</span>
-        <select id="skipSelect" class="input"></select>
-        <button id="useSkipBtn" class="btn">Use</button>
-        <span id="skipArmedNote" class="tiny muted" aria-live="polite"></span>
+      <!-- HUD -->
+      <div class="hud row between center">
+        <div class="tiny muted">Round Timer: <strong id="timer">--:--</strong></div>
+        <div class="tiny muted">Round: <strong id="roundLabel">1</strong></div>
+        <div class="tiny muted crowd-wrap">
+          Crowd: <strong id="crowdVal">0/10</strong>
+          <progress id="crowdBar" max="10" value="0" aria-label="Crowd meter"></progress>
+          <button id="crowdPlus" class="btn tinybtn" title="Crowd +1">+1</button>
+          <button id="crowdMinus" class="btn tinybtn" title="Crowd -1">-1</button>
+        </div>
       </div>
-    </div>
-  </div>
-</section>
 
-    <section class="panel">
-  <h3 class="section-title">Scoreboard</h3>
-  <div id="players" class="players"></div>
-  <div class="row">
-    <input id="newPlayerName" class="input" placeholder="Add player name" />
-    <button id="addPlayerBtn" class="btn">Add</button>
-    <button id="resetScoresBtn" class="btn">Reset Scores</button>
-  </div>
-</section>
+      <div class="game">
+        <div id="card" class="card" aria-live="polite">
+          <div class="card-title">Not started</div>
+          <p class="card-body muted">Press <em>New Game / Round</em> to initialize the engine.</p>
+        </div>
 
+        <div class="controls">
+          <button id="startBtn" class="btn primary">New Game / Round</button>
+          <button id="nextBtn" class="btn" disabled>Next</button>
+
+          <div class="row">
+            <span class="tiny muted">Use Skip:</span>
+            <select id="skipSelect" class="input"></select>
+            <button id="useSkipBtn" class="btn">Use</button>
+            <span id="skipArmedNote" class="tiny muted" aria-live="polite"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCOREBOARD -->
     <section class="panel">
-      <h3 class="section-title">SDSU-flavored rule preview (coming next step)</h3>
+      <h3 class="section-title">Scoreboard</h3>
+      <div id="players" class="players"></div>
+      <div class="row">
+        <input id="newPlayerName" class="input" placeholder="Add player name" />
+        <button id="addPlayerBtn" class="btn">Add</button>
+        <button id="resetScoresBtn" class="btn">Reset Scores</button>
+      </div>
+    </section>
+
+    <!-- Flavor preview (no logic needed) -->
+    <section class="panel">
+      <h3 class="section-title">SDSU-flavored rule preview</h3>
       <ul class="rules">
         <li><strong>Hepner Bell</strong> — timed chime rounds every few minutes.</li>
         <li><strong>Trolley Tokens</strong> — transit cards that skip/stack challenges.</li>
@@ -112,7 +110,7 @@
     <p class="tiny muted">© <span id="year"></span> Your Name. Educational demo. San Diego State University marks may be trademarks of their owners.</p>
   </footer>
 
-  <!-- Age Gate (shown only if switching to Party Mode without prior verification) -->
+  <!-- Age Gate -->
   <dialog id="ageGate" aria-label="Age verification">
     <form method="dialog" class="dialog-card">
       <h3>Are you 21 or older?</h3>
@@ -123,100 +121,99 @@
       </div>
     </form>
   </dialog>
-  
+
   <!-- Setup dialog -->
-<dialog id="setupDlg" aria-label="New game setup">
-  <form method="dialog" class="dialog-card">
-    <h3>New Game Setup</h3>
+  <dialog id="setupDlg" aria-label="New game setup">
+    <form method="dialog" class="dialog-card">
+      <h3>New Game Setup</h3>
 
-    <label class="tiny">Players (comma-separated)</label>
-    <input type="text" id="playersInput" class="input" value="You, Friend" />
+      <label class="tiny">Players (comma-separated)</label>
+      <input type="text" id="playersInput" class="input" value="You, Friend" />
 
-    <div class="row">
-      <div style="flex:1">
-        <label class="tiny">Win points</label>
-        <input type="number" id="winPointsInput" class="input" min="5" max="50" />
+      <div class="row">
+        <div style="flex:1">
+          <label class="tiny">Win points</label>
+          <input type="number" id="winPointsInput" class="input" min="5" max="50" />
+        </div>
+        <div style="flex:1">
+          <label class="tiny">Round length (seconds)</label>
+          <input type="number" id="roundSecondsInput" class="input" min="30" max="600" />
+        </div>
       </div>
-      <div style="flex:1">
-        <label class="tiny">Round length (seconds)</label>
-        <input type="number" id="roundSecondsInput" class="input" min="30" max="600" />
+
+      <p class="tiny muted">Hepner Bell interrupts automatically every few minutes.</p>
+
+      <div class="dialog-actions">
+        <button value="cancel" class="btn">Cancel</button>
+        <button value="begin" class="btn primary">Begin</button>
       </div>
-    </div>
+    </form>
+  </dialog>
 
-    <p class="tiny muted">Hepner Bell interrupts automatically every few minutes.</p>
+  <!-- How to Play dialog -->
+  <dialog id="howToDlg" aria-label="How to Play">
+    <form method="dialog" class="dialog-card">
+      <h3>How to Play — SDSU Edition</h3>
+      <p class="tiny muted">Two modes: <strong>Sober / All-ages</strong> and <strong>21+ Party</strong> (age gate enforced). Same cards, different actions.</p>
 
-    <div class="dialog-actions">
-      <button value="cancel" class="btn">Cancel</button>
-      <button value="begin" class="btn primary">Begin</button>
-    </div>
-  </form>
-</dialog>
+      <ul class="rules" style="margin-left:18px">
+        <li><strong>Goal:</strong> First to <em>Win points</em> (default 10) or play by rounds.</li>
+        <li><strong>Loop:</strong> Draw a card → follow the prompt → award/adjust points → Next.</li>
+        <li><strong>Crowd Meter:</strong> Hype actions raise Crowd. At max, a <em>Storm the Court</em> card triggers; meter resets to 3.</li>
+        <li><strong>Hepner Bell:</strong> Every few minutes, a bell interrupt shows a global mini-action.</li>
+        <li><strong>Trolley Tokens:</strong> Cards may grant <em>Skip</em> or <em>Boost</em>. Skip arms the next card to be skipped; Boost adds +2 the next time that player gains points.</li>
+      </ul>
 
-<!-- How to Play dialog -->
-<dialog id="howToDlg" aria-label="How to Play">
-  <form method="dialog" class="dialog-card">
-    <h3>How to Play — SDSU Edition</h3>
-    <p class="tiny muted">Two modes: <strong>Sober / All-ages</strong> and <strong>21+ Party</strong> (age gate enforced). Same cards, different actions.</p>
+      <h4>Keyboard shortcuts</h4>
+      <ul class="rules" style="margin-left:18px">
+        <li><kbd>N</kbd> — Next card</li>
+        <li><kbd>S</kbd> — New Game / Round (opens setup)</li>
+        <li><kbd>[</kbd>/<kbd>]</kbd> — Crowd −1 / +1</li>
+        <li><kbd>1…9</kbd> — +1 to player #1–#9 (hold <kbd>⌥ Option</kbd> for −1)</li>
+        <li><kbd>Esc</kbd> — Close an open dialog</li>
+      </ul>
 
-    <ul class="rules" style="margin-left:18px">
-      <li><strong>Goal:</strong> First to <em>Win points</em> (default 10) or play by rounds.</li>
-      <li><strong>Loop:</strong> Draw a card → follow the prompt → award/adjust points (+/- next to each player) → Next.</li>
-      <li><strong>Crowd Meter:</strong> Hype actions raise Crowd. At max, a <em>Storm the Court</em> card triggers; meter resets to 3.</li>
-      <li><strong>Hepner Bell:</strong> Every few minutes, a bell interrupt shows a global mini-action.</li>
-      <li><strong>Trolley Tokens:</strong> Cards may grant <em>Skip</em> or <em>Boost</em>. Skip arms the next card to be skipped; Boost adds +2 the next time that player gains points.</li>
-    </ul>
+      <p class="tiny muted">Play responsibly. Party Mode is for 21+ only. Hydrate; never drink and drive.</p>
 
-    <h4>Keyboard shortcuts</h4>
-    <ul class="rules" style="margin-left:18px">
-      <li><kbd>N</kbd> — Next card</li>
-      <li><kbd>S</kbd> — New Game / Round (opens setup)</li>
-      <li><kbd>[</kbd>/<kbd>]</kbd> — Crowd −1 / +1</li>
-      <li><kbd>1…9</kbd> — +1 point to player #1–#9 (hold <kbd>⌥ Option</kbd> for −1)</li>
-      <li><kbd>Esc</kbd> — Close an open dialog</li>
-    </ul>
-
-    <p class="tiny muted">Play responsibly. Party Mode is for 21+ only. Hydrate; never drink and drive.</p>
-
-    <div class="dialog-actions">
-      <button value="ok" class="btn primary">Got it</button>
-    </div>
-  </form>
-</dialog>
-
-<!-- Options dialog -->
-<dialog id="optionsDlg" aria-label="Options">
-  <form method="dialog" class="dialog-card">
-    <h3>Options</h3>
-
-    <label class="tiny">
-      <input type="checkbox" id="optKeyboard" checked />
-      Enable keyboard shortcuts
-    </label>
-
-    <div class="row" style="margin-top:8px">
-      <div style="flex:1">
-        <label class="tiny">Hepner Bell interval (seconds)</label>
-        <input type="number" id="optBell" class="input" min="10" max="600" />
+      <div class="dialog-actions">
+        <button value="ok" class="btn primary">Got it</button>
       </div>
-      <div style="flex:1">
-        <label class="tiny">Crowd max (trigger)</label>
-        <input type="number" id="optCrowdMax" class="input" min="5" max="20" />
+    </form>
+  </dialog>
+
+  <!-- Options dialog -->
+  <dialog id="optionsDlg" aria-label="Options">
+    <form method="dialog" class="dialog-card">
+      <h3>Options</h3>
+
+      <label class="tiny">
+        <input type="checkbox" id="optKeyboard" checked />
+        Enable keyboard shortcuts
+      </label>
+
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1">
+          <label class="tiny">Hepner Bell interval (seconds)</label>
+          <input type="number" id="optBell" class="input" min="10" max="600" />
+        </div>
+        <div style="flex:1">
+          <label class="tiny">Crowd max (trigger)</label>
+          <input type="number" id="optCrowdMax" class="input" min="5" max="20" />
+        </div>
+        <div style="flex:1">
+          <label class="tiny">Crowd reset after Storm</label>
+          <input type="number" id="optCrowdReset" class="input" min="0" max="10" />
+        </div>
       </div>
-      <div style="flex:1">
-        <label class="tiny">Crowd reset after Storm</label>
-        <input type="number" id="optCrowdReset" class="input" min="0" max="10" />
+
+      <p class="tiny muted">Round length & win points are set in the “New Game / Round” setup dialog.</p>
+
+      <div class="dialog-actions">
+        <button value="cancel" class="btn">Cancel</button>
+        <button value="save" class="btn primary">Save</button>
       </div>
-    </div>
-
-    <p class="tiny muted">Round length & win points are set in the “New Game / Round” setup dialog.</p>
-
-    <div class="dialog-actions">
-      <button value="cancel" class="btn">Cancel</button>
-      <button value="save" class="btn primary">Save</button>
-    </div>
-  </form>
-</dialog>
-
-  
+    </form>
+  </dialog>
 </body>
 </html>
+
