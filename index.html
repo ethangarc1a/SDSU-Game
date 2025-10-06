@@ -16,12 +16,14 @@
 <body>
   <header class="site-header">
     <h1 class="brand">SDSU Game</h1>
+    
     <nav class="nav">
-      <!-- Resume page comes in a later step -->
-      <a href="#" aria-disabled="true" class="nav-link disabled" title="Coming soon">Resume</a>
-      <a href="#" aria-disabled="true" class="nav-link disabled" title="Coming soon">How to Play</a>
-      <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
-    </nav>
+  <a href="./resume.html" class="nav-link">Resume</a>
+  <a href="#" id="howToLink" class="nav-link">How to Play</a>
+  <a href="#" id="optionsLink" class="nav-link">Options</a>
+  <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+</nav>
+
   </header>
 
   <main class="container" role="main">
@@ -150,5 +152,71 @@
   </form>
 </dialog>
 
+<!-- How to Play dialog -->
+<dialog id="howToDlg" aria-label="How to Play">
+  <form method="dialog" class="dialog-card">
+    <h3>How to Play — SDSU Edition</h3>
+    <p class="tiny muted">Two modes: <strong>Sober / All-ages</strong> and <strong>21+ Party</strong> (age gate enforced). Same cards, different actions.</p>
+
+    <ul class="rules" style="margin-left:18px">
+      <li><strong>Goal:</strong> First to <em>Win points</em> (default 10) or play by rounds.</li>
+      <li><strong>Loop:</strong> Draw a card → follow the prompt → award/adjust points (+/- next to each player) → Next.</li>
+      <li><strong>Crowd Meter:</strong> Hype actions raise Crowd. At max, a <em>Storm the Court</em> card triggers; meter resets to 3.</li>
+      <li><strong>Hepner Bell:</strong> Every few minutes, a bell interrupt shows a global mini-action.</li>
+      <li><strong>Trolley Tokens:</strong> Cards may grant <em>Skip</em> or <em>Boost</em>. Skip arms the next card to be skipped; Boost adds +2 the next time that player gains points.</li>
+    </ul>
+
+    <h4>Keyboard shortcuts</h4>
+    <ul class="rules" style="margin-left:18px">
+      <li><kbd>N</kbd> — Next card</li>
+      <li><kbd>S</kbd> — New Game / Round (opens setup)</li>
+      <li><kbd>[</kbd>/<kbd>]</kbd> — Crowd −1 / +1</li>
+      <li><kbd>1…9</kbd> — +1 point to player #1–#9 (hold <kbd>⌥ Option</kbd> for −1)</li>
+      <li><kbd>Esc</kbd> — Close an open dialog</li>
+    </ul>
+
+    <p class="tiny muted">Play responsibly. Party Mode is for 21+ only. Hydrate; never drink and drive.</p>
+
+    <div class="dialog-actions">
+      <button value="ok" class="btn primary">Got it</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Options dialog -->
+<dialog id="optionsDlg" aria-label="Options">
+  <form method="dialog" class="dialog-card">
+    <h3>Options</h3>
+
+    <label class="tiny">
+      <input type="checkbox" id="optKeyboard" checked />
+      Enable keyboard shortcuts
+    </label>
+
+    <div class="row" style="margin-top:8px">
+      <div style="flex:1">
+        <label class="tiny">Hepner Bell interval (seconds)</label>
+        <input type="number" id="optBell" class="input" min="10" max="600" />
+      </div>
+      <div style="flex:1">
+        <label class="tiny">Crowd max (trigger)</label>
+        <input type="number" id="optCrowdMax" class="input" min="5" max="20" />
+      </div>
+      <div style="flex:1">
+        <label class="tiny">Crowd reset after Storm</label>
+        <input type="number" id="optCrowdReset" class="input" min="0" max="10" />
+      </div>
+    </div>
+
+    <p class="tiny muted">Round length & win points are set in the “New Game / Round” setup dialog.</p>
+
+    <div class="dialog-actions">
+      <button value="cancel" class="btn">Cancel</button>
+      <button value="save" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+  
 </body>
 </html>
