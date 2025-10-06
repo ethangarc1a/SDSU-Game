@@ -1,15 +1,11 @@
 (function(){
-  // ---------- DOM helpers ----------
   const $ = (sel, root=document) => root.querySelector(sel);
   const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
-  // ---------- State ----------
   const state = {
-    // Step 2
     mode: 'sober',
     ageVerified: false,
 
-    // Game
     players: [],
     drawPile: [],
     discardPile: [],
@@ -21,14 +17,13 @@
     timers: { roundLeft: 0, tickId: null, nextBellAt: 0 },
     settings: { winPoints: 10, roundSeconds: 90, bellIntervalSeconds: 180, crowdMax: 10, crowdReset: 3 },
 
-    // Options / Theme
-    options: { keyboardShortcuts: true, theme: 'system' }, // 'system'|'light'|'dark'
+    options: { keyboardShortcuts: true, theme: 'system', sound:false, haptics:false },
 
-    // Deck prefs
     deckPrefs: { enabledCategories: {}, customCards: [] },
+
+    audio: { ctx:null, ready:false }
   };
 
-  // ---------- Elements ----------
   const els = {
     year: $('#year'),
     modeNote: $('#modeNote'),
@@ -57,7 +52,6 @@
     winPointsInput: $('#winPointsInput'),
     roundSecondsInput: $('#roundSecondsInput'),
 
-    // How-to / Options / Theme / Onboarding / Deck
     howToLink: $('#howToLink'),
     optionsLink: $('#optionsLink'),
     howToDlg: $('#howToDlg'),
@@ -91,8 +85,13 @@
     cancelImportBtn: $('#cancelImportBtn'),
     resetDeckBtn: $('#resetDeckBtn'),
 
-    // NEW (Step 8)
     installBtn: $('#installBtn'),
+    shareLink: $('#shareLink'),
+
+    // audio options
+    optSound: $('#optSound'),
+    optHaptics: $('#optHaptics'),
+    testChimeBtn: $('#testChimeBtn'),
   };
 
   // ---------- Utils ----------
@@ -118,9 +117,9 @@
 
       const game = JSON.parse(localStorage.getItem('sdsuGameV2') || '{}');
       if(game && game.players){ Object.assign(state, game); }
-      if(game && game.options){ state.options = Object.assign(state.options, game.options); }
+      if(game && game.options){ state.options = Object.assign({keyboardShortcuts:true,theme:'system',sound:false,haptics:false}, game.options); }
       if(game && game.deckPrefs){ state.deckPrefs = Object.assign(state.deckPrefs, game.deckPrefs); }
-    }catch{/* ignore */}
+    }catch{}
   }
   function saveState(){
     const snapshot = {
@@ -151,6 +150,53 @@
     else { root.removeAttribute('data-theme'); els.themeToggle&&(els.themeToggle.textContent='Theme: System'); }
   }
   function cycleTheme(){ const order=['system','light','dark']; const idx=order.indexOf(state.options.theme); state.options.theme=order[(idx+1)%order.length]; applyTheme(); saveState(); }
+
+  // ---------- Audio / Haptics ----------
+  function ensureAudio(){
+    if(!state.options.sound) return false;
+    if(state.audio.ctx) return true;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if(!Ctx) return false;
+    state.audio.ctx = new Ctx();
+    state.audio.ready = true;
+    return true;
+  }
+  function playChime(){
+    if(!state.options.sound || !ensureAudio()) return;
+    const ctx = state.audio.ctx;
+    const now = ctx.currentTime;
+
+    // 3 partials to mimic a bell
+    const freqs = [880, 1320, 1760];
+    freqs.forEach((f, i)=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.25/(i+1), now+0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.2 + i*0.05);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 1.4 + i*0.05);
+    });
+  }
+  function playTick(){
+    if(!state.options.sound || !ensureAudio()) return;
+    const ctx = state.audio.ctx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = 420;
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.15, now+0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+0.08);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now+0.1);
+  }
+  function vibrate(pattern){ if(state.options.haptics && 'vibrate' in navigator){ try{ navigator.vibrate(pattern); }catch{} } }
 
   // ---------- Deck merging & filtering ----------
   function mergedCards(){
@@ -246,7 +292,7 @@
   function drawNext(){
     if(state.pendingBellCard){
       const bell = state.pendingBellCard; state.pendingBellCard = null;
-      renderCard(bell, true); applyCrowd(bell.crowdDelta || 0); saveState(); return;
+      renderCard(bell, true); applyCrowd(bell.crowdDelta || 0); playChime(); vibrate([10,80,10]); saveState(); return;
     }
     if(state.skipArmedBy){
       if(state.drawPile.length){ state.discardPile.push(state.drawPile.shift()); }
@@ -258,6 +304,7 @@
     state.currentCard = card; state.discardPile.push(card);
     renderCard(card, false);
     applyCrowd(card.crowdDelta || 0);
+    playTick();
     saveState();
   }
   function scheduleNextBell(){ state.timers.nextBellAt = Date.now() + (state.settings.bellIntervalSeconds * 1000); }
@@ -272,7 +319,7 @@
     renderCrowd();
     if(state.crowd >= state.settings.crowdMax){
       const storm = state._stormCard || mergedCards().find(c=>c.triggersOnCrowdFull) || null;
-      if(storm){ renderCard(storm, true); state.crowd = Math.min(state.settings.crowdReset, state.settings.crowdMax); renderCrowd(); }
+      if(storm){ renderCard(storm, true); state.crowd = Math.min(state.settings.crowdReset, state.settings.crowdMax); renderCrowd(); playChime(); vibrate([30,60,30]); }
     }
   }
 
@@ -283,7 +330,7 @@
     p.points = Math.max(0, p.points + actual); renderPlayers();
     if(p.points >= state.settings.winPoints){
       renderCardMessage('🏆 We have a winner!', `${escapeHtml(p.name)} reached ${state.settings.winPoints} points. Start a new round or reset scores to play again.`);
-      els.nextBtn.disabled = true;
+      els.nextBtn.disabled = true; playChime();
     }
     saveState();
   }
@@ -365,7 +412,7 @@
     if(state.timers.roundLeft <= 0){ endRound(); saveState(); return; }
     if(Date.now() >= state.timers.nextBellAt && !state.pendingBellCard){
       fireBellInterrupt();
-      if(state.pendingBellCard){ const bell=state.pendingBellCard; state.pendingBellCard=null; renderCard(bell, true); applyCrowd(bell.crowdDelta||0); }
+      if(state.pendingBellCard){ const bell=state.pendingBellCard; state.pendingBellCard=null; renderCard(bell, true); applyCrowd(bell.crowdDelta||0); playChime(); vibrate([10,80,10]); }
     }
   }
 
@@ -432,6 +479,24 @@
   }
   function resetDeckPrefs(){ state.deckPrefs = { enabledCategories:{}, customCards:[] }; saveState(); openDeckManager(); }
 
+  // ---------- Share ----------
+  function buildShareURL(){
+    const url = new URL(location.href);
+    const names = state.players.length ? state.players.map(p=>p.name).join(', ') : (els.playersInput.value || 'You, Friend');
+    url.searchParams.set('players', names);
+    url.searchParams.set('mode', state.mode);
+    url.searchParams.set('wp', String(state.settings.winPoints));
+    url.searchParams.set('rs', String(state.settings.roundSeconds));
+    return url.toString();
+  }
+  function applyShareParams(){
+    const p = new URLSearchParams(location.search);
+    if(p.has('players')) els.playersInput.value = p.get('players');
+    if(p.has('wp')) els.winPointsInput.value = clampInt(p.get('wp'), 5, 50, 10);
+    if(p.has('rs')) els.roundSecondsInput.value = clampInt(p.get('rs'), 30, 600, 90);
+    if(p.get('mode') === 'party'){ /* we’ll still gate actual party switch */ }
+  }
+
   // ---------- Events ----------
   let deferredInstallPrompt = null;
 
@@ -464,17 +529,23 @@
       els.optBell.value = state.settings.bellIntervalSeconds;
       els.optCrowdMax.value = state.settings.crowdMax;
       els.optCrowdReset.value = state.settings.crowdReset;
+      els.optSound.checked = !!state.options.sound;
+      els.optHaptics.checked = !!state.options.haptics;
       els.optionsDlg?.showModal?.();
     });
     els.optionsDlg?.addEventListener('close', ()=>{
       if(els.optionsDlg.returnValue!=='save') return;
       state.options.keyboardShortcuts = !!els.optKeyboard.checked;
+      state.options.sound = !!els.optSound.checked;
+      state.options.haptics = !!els.optHaptics.checked;
+      if(state.options.sound) ensureAudio();
       const bell=clampInt(els.optBell.value,10,600,state.settings.bellIntervalSeconds);
       const cmax=clampInt(els.optCrowdMax.value,5,20,state.settings.crowdMax);
       const creset=clampInt(els.optCrowdReset.value,0,10,state.settings.crowdReset);
       state.settings.bellIntervalSeconds=bell; state.settings.crowdMax=cmax; state.settings.crowdReset=Math.min(creset,cmax);
       renderCrowd(); scheduleNextBell(); saveState();
     });
+    els.testChimeBtn?.addEventListener('click', (e)=>{ e.preventDefault(); state.options.sound = true; ensureAudio(); playChime(); });
 
     // Theme
     els.themeToggle?.addEventListener('click', (e)=>{ e.preventDefault(); cycleTheme(); });
@@ -507,7 +578,22 @@
     els.applyImportBtn?.addEventListener('click', (e)=>{ e.preventDefault(); applyImport(); });
     els.resetDeckBtn?.addEventListener('click', (e)=>{ e.preventDefault(); resetDeckPrefs(); });
 
-    // --- PWA Install (Step 8) ---
+    // Share
+    els.shareLink?.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      const url = buildShareURL();
+      if(navigator.share){
+        try{ await navigator.share({ title:'SDSU Game', text:'Join my round!', url }); }
+        catch{}
+      }else if(navigator.clipboard){
+        try{ await navigator.clipboard.writeText(url); alert('Link copied to clipboard!'); }
+        catch{ prompt('Copy this link:', url); }
+      }else{
+        prompt('Copy this link:', url);
+      }
+    });
+
+    // PWA install
     window.addEventListener('beforeinstallprompt', (e)=>{
       e.preventDefault();
       deferredInstallPrompt = e;
@@ -523,10 +609,9 @@
     });
   }
 
-  // ---------- Service Worker registration ----------
+  // ---------- Service Worker ----------
   function registerServiceWorker(){
     if('serviceWorker' in navigator){
-      // Use relative path so it works on GitHub Pages subpaths
       navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
     }
   }
@@ -544,7 +629,7 @@
       state.settings.crowdReset = cfg.crowdReset ?? state.settings.crowdReset;
     }
 
-    loadState(); applyTheme(); reflectMode(); attachEvents(); renderAll();
+    loadState(); applyTheme(); reflectMode(); attachEvents(); applyShareParams(); renderAll();
     registerServiceWorker();
   }
 
