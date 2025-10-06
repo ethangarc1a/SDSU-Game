@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Ethan — Engineering Resume</title>
+  <link rel="stylesheet" href="./styles.css"/>
+  <style>
+    .resume{ max-width: 900px; margin: 20px auto 60px; background: var(--panel); border:1px solid var(--border); border-radius:20px; box-shadow: var(--shadow); padding: 20px; }
+    .header{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; }
+    .name{ font-size: clamp(22px, 3vw, 32px); margin:0; }
+    .subtitle{ color: var(--muted); margin: 2px 0 0; }
+    .cols{ display:grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-top: 14px; }
+    .section{ margin-top: 12px; }
+    .section h3{ margin:0 0 6px; font-size: 16px; }
+    .item{ margin: 6px 0; }
+    .pill{ display:inline-block; padding:4px 8px; border:1px solid var(--border); border-radius:999px; font-size:12px; margin:2px 6px 2px 0; }
+    .muted{ color: var(--muted); }
+    .links a{ text-decoration:none; margin-right:10px; }
+    .back{ display:inline-block; margin: 10px 0 0; }
+    ul{ margin: 6px 0 0 18px; }
+    @media (max-width: 760px){ .cols{ grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1 class="brand">SDSU Game</h1>
+    <nav class="nav">
+      <a href="./index.html" class="nav-link">Game</a>
+      <a href="./resume.html" class="nav-link is-active">Resume</a>
+      <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="resume">
+    <div class="header">
+      <div>
+        <h2 class="name">Ethan — Computer Engineering Student</h2>
+        <p class="subtitle">Junior college student • Seeking software/embedded internships</p>
+      </div>
+      <div class="links">
+        <!-- Replace with your real links -->
+        <a href="mailto:you@example.com">you@example.com</a>
+        <a href="https://github.com/ethangarc1a" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://www.linkedin.com/" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+
+    <div class="cols">
+      <section class="section">
+        <h3>Projects</h3>
+
+        <div class="item">
+          <strong>SDSU Game (Sober & 21+ Modes)</strong> — <a href="./index.html">Live</a>
+          <ul>
+            <li>Vanilla JS engine with timed “Hepner Bell” events, data-driven deck, Crowd Meter, and localStorage save.</li>
+            <li>Accessible UI with keyboard shortcuts; deployed to GitHub Pages without build tools.</li>
+          </ul>
+        </div>
+
+        <div class="item">
+          <strong>Space Dash (MIPS Assembly)</strong>
+          <ul>
+            <li>Movement, collision detection, and game state on MARS; bitmap display + console.</li>
+          </ul>
+        </div>
+      </section>
+
+      <aside>
+        <section class="section">
+          <h3>Skills</h3>
+          <div>
+            <span class="pill">C/C++</span>
+            <span class="pill">Python</span>
+            <span class="pill">Assembly (MIPS)</span>
+            <span class="pill">JavaScript</span>
+            <span class="pill">Git/GitHub</span>
+            <span class="pill">Godot</span>
+          </div>
+        </section>
+
+        <section class="section">
+          <h3>Coursework</h3>
+          <ul>
+            <li>Discrete Math, Data Structures</li>
+            <li>Computer Architecture, Digital Logic</li>
+            <li>Thermodynamics (PHYC 202)</li>
+          </ul>
+        </section>
+
+        <section class="section">
+          <h3>Education</h3>
+          <div class="item">
+            <strong>Your College</strong> — A.S. Computer Engineering (in progress)
+            <div class="muted">Expected YYYY</div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <a class="back" href="./index.html">← Back to Game</a>
+  </main>
+
+  <footer class="site-footer">
+    <p class="tiny muted">© <span id="year"></span> Ethan. Educational demo project.</p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
