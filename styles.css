@@ -142,3 +142,12 @@ progress { inline-size: 120px; block-size: 10px; }
 }
 .tinybtn{ padding:6px 8px; font-size:12px; }
 
+/* Step 5 additions */
+kbd{
+  display:inline-block; padding:2px 6px; border:1px solid var(--border);
+  border-bottom-width:2px; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px; background: var(--panel);
+}
+h4{ margin:12px 0 6px; font-size: 14px; }
+
+
