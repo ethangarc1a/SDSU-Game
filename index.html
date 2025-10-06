@@ -15,6 +15,7 @@
     <h1 class="brand">SDSU Game</h1>
     <nav class="nav">
       <a href="./resume.html" class="nav-link">Resume</a>
+      <a href="#" id="deckLink" class="nav-link">Deck</a>
       <a href="#" id="howToLink" class="nav-link">How to Play</a>
       <a href="#" id="optionsLink" class="nav-link">Options</a>
       <a href="#" id="themeToggle" class="nav-link" title="Toggle theme">Theme</a>
@@ -27,7 +28,7 @@
       <p class="kicker">No installs • Vanilla JS • Mobile-first</p>
       <h2>San Diego State Edition — Play in Sober or 21+ Party Mode</h2>
       <p class="muted">
-        Use “New Game / Round” to start; “Next” draws the next card. Options and keyboard shortcuts are available.
+        Use “New Game / Round” to start; “Next” draws the next card. Options, Deck Manager, and keyboard shortcuts included.
       </p>
     </section>
 
@@ -91,7 +92,7 @@
       </div>
     </section>
 
-    <!-- Flavor preview (no logic needed) -->
+    <!-- Flavor preview (static) -->
     <section class="panel">
       <h3 class="section-title">SDSU-flavored rule preview</h3>
       <ul class="rules">
@@ -221,11 +222,74 @@
     <form method="dialog" class="dialog-card">
       <h3>Welcome! 👋</h3>
       <p class="muted tiny">
-        Start with <strong>New Game / Round</strong>. Use <kbd>N</kbd> for Next, <kbd>S</kbd> to open setup, and <kbd>[</kbd>/<kbd>]</kbd> for Crowd.  
+        Start with <strong>New Game / Round</strong>. Use <kbd>N</kbd> for Next, <kbd>S</kbd> for setup, and <kbd>[</kbd>/<kbd>]</kbd> for Crowd.  
         Open <strong>How to Play</strong> any time from the header.
       </p>
       <div class="dialog-actions">
         <button value="ok" class="btn primary">Let’s play</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Deck Manager dialog -->
+  <dialog id="deckDlg" aria-label="Deck Manager">
+    <form method="dialog" class="dialog-card">
+      <h3>Deck Manager</h3>
+      <p class="tiny muted">
+        Enable/disable categories, add custom cards, or import/export. Changes affect the <em>next</em> round you start.
+      </p>
+
+      <div class="section">
+        <h4>Enabled Categories <span id="deckStatsLabel" class="tiny muted"></span></h4>
+        <div id="catList" class="cats"></div>
+      </div>
+
+      <div class="section">
+        <h4>Add a Custom Card</h4>
+        <div class="grid2">
+          <label>Category <input id="cardCat" class="input" placeholder="e.g., Sunset Cliffs" /></label>
+          <label>Title <input id="cardTitle" class="input" placeholder="Card title" /></label>
+        </div>
+        <label>Prompt / Text <textarea id="cardText" class="input" rows="2" placeholder="Describe the prompt players will see"></textarea></label>
+        <div class="grid2">
+          <label>Sober action <input id="cardSober" class="input" placeholder="What happens in Sober mode?" /></label>
+          <label>Party action <input id="cardParty" class="input" placeholder="What happens in 21+ Party mode?" /></label>
+        </div>
+        <div class="grid2">
+          <label>Crowd delta <input id="cardCrowdDelta" type="number" class="input" value="0" /></label>
+          <label>Token
+            <select id="cardToken" class="input">
+              <option value="">(none)</option>
+              <option value="skip">Skip</option>
+              <option value="boost">Boost</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
+          <button id="addCustomBtn" class="btn">Add Card</button>
+          <span id="addCustomNote" class="tiny muted" aria-live="polite"></span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h4>Import / Export</h4>
+        <div class="row">
+          <button id="exportCustomBtn" class="btn">Export Custom (prefs + cards)</button>
+          <button id="exportMergedBtn" class="btn">Export Merged Deck</button>
+          <button id="showImportBtn" class="btn">Import…</button>
+          <button id="resetDeckBtn" class="btn">Reset to Defaults</button>
+        </div>
+        <div id="importWrap" class="import hidden">
+          <textarea id="importText" class="input" rows="6" placeholder='Paste JSON: either {"customCards":[],"enabledCategories":{}} or {"cards":[...]}'></textarea>
+          <div class="row">
+            <button id="applyImportBtn" class="btn primary">Apply Import</button>
+            <button id="cancelImportBtn" class="btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="dialog-actions">
+        <button value="close" class="btn primary">Done</button>
       </div>
     </form>
   </dialog>
