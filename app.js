@@ -24,11 +24,8 @@
     // Options / Theme
     options: { keyboardShortcuts: true, theme: 'system' }, // 'system'|'light'|'dark'
 
-    // NEW: Deck preferences (persisted)
-    deckPrefs: {
-      enabledCategories: {},   // { "Hepner Bell": true, ... } ; empty = all enabled
-      customCards: [],         // array of card objects shaped like deck.js
-    },
+    // Deck prefs
+    deckPrefs: { enabledCategories: {}, customCards: [] },
   };
 
   // ---------- Elements ----------
@@ -60,7 +57,7 @@
     winPointsInput: $('#winPointsInput'),
     roundSecondsInput: $('#roundSecondsInput'),
 
-    // How-to / Options / Theme / Onboarding
+    // How-to / Options / Theme / Onboarding / Deck
     howToLink: $('#howToLink'),
     optionsLink: $('#optionsLink'),
     howToDlg: $('#howToDlg'),
@@ -72,7 +69,6 @@
     themeToggle: $('#themeToggle'),
     onboardDlg: $('#onboardDlg'),
 
-    // NEW: Deck Manager
     deckLink: $('#deckLink'),
     deckDlg: $('#deckDlg'),
     catList: $('#catList'),
@@ -94,6 +90,9 @@
     applyImportBtn: $('#applyImportBtn'),
     cancelImportBtn: $('#cancelImportBtn'),
     resetDeckBtn: $('#resetDeckBtn'),
+
+    // NEW (Step 8)
+    installBtn: $('#installBtn'),
   };
 
   // ---------- Utils ----------
@@ -157,7 +156,6 @@
   function mergedCards(){
     const base = (window.DECK?.cards || []).slice();
     const custom = (state.deckPrefs.customCards || []).slice();
-    // Normalize minimal shape for customs
     const withIds = custom.map((c, i)=>({
       id: c.id || `CUST-${Date.now()}-${i}`,
       category: c.category || 'Custom',
@@ -170,41 +168,24 @@
       triggersOnCrowdFull: !!c.triggersOnCrowdFull,
       tags: Array.isArray(c.tags) ? c.tags : [],
     }));
-    const merged = base.concat(withIds);
-    return merged;
+    return base.concat(withIds);
   }
-
   function categoriesWithCounts(cards){
-    const map = new Map();
-    for(const c of cards){
-      const key = c.category || 'Uncategorized';
-      map.set(key, (map.get(key)||0)+1);
-    }
-    return map; // Map<category, count>
+    const map = new Map(); for(const c of cards){ const key=c.category||'Uncategorized'; map.set(key,(map.get(key)||0)+1); } return map;
   }
-
   function isCategoryEnabled(cat){
     const flags = state.deckPrefs.enabledCategories || {};
-    if(Object.keys(flags).length === 0) return true; // nothing set => all on
+    if(Object.keys(flags).length === 0) return true;
     return !!flags[cat];
   }
-
-  // Build piles for a new game based on prefs
   function buildPiles(){
     const cards = mergedCards();
-    // Keep the storm card regardless of filtering (special trigger)
-    const stormCard = cards.find(c=>c.triggersOnCrowdFull) ||
-                      (window.DECK.cards || []).find(c=>c.triggersOnCrowdFull) ||
-                      null;
-
-    // Filter drawables: not triggersOnCrowdFull and category enabled
+    const stormCard = cards.find(c=>c.triggersOnCrowdFull) || (window.DECK.cards||[]).find(c=>c.triggersOnCrowdFull) || null;
     const drawables = cards.filter(c => !c.triggersOnCrowdFull && isCategoryEnabled(c.category || ''));
     state.drawPile = shuffle(drawables);
     state.discardPile = [];
     state.currentCard = null;
-
-    // Keep a pointer to storm (we'll re-find by condition when needed)
-    state._stormCard = stormCard; // internal
+    state._stormCard = stormCard;
   }
 
   // ---------- Mode handling ----------
@@ -221,11 +202,7 @@
         : 'Party Mode is for 21+ players only. Hydrate, know your limits, and never drink and drive.';
     saveState();
   }
-  function requestPartyMode(){
-    if(state.ageVerified){ setMode('party'); return; }
-    if(typeof els.ageGate?.showModal === 'function'){ els.ageGate.showModal(); }
-    else { els.ageGate?.setAttribute('open',''); }
-  }
+  function requestPartyMode(){ if(state.ageVerified){ setMode('party'); return; } els.ageGate?.showModal?.(); }
   function setMode(mode){ state.mode = mode; reflectMode(); }
 
   // ---------- Setup / Reset ----------
@@ -235,7 +212,6 @@
     els.roundSecondsInput.value = state.settings.roundSeconds || cfg.roundSeconds || 90;
     els.setupDlg?.showModal?.();
   }
-
   function beginGame(){
     const names = (els.playersInput.value || '').split(',').map(s=>s.trim()).filter(Boolean);
     const seen = new Set();
@@ -253,7 +229,6 @@
     drawNext();
     saveState();
   }
-
   function startRound(){
     state.timers.roundLeft = state.settings.roundSeconds;
     scheduleNextBell();
@@ -273,34 +248,28 @@
       const bell = state.pendingBellCard; state.pendingBellCard = null;
       renderCard(bell, true); applyCrowd(bell.crowdDelta || 0); saveState(); return;
     }
-
     if(state.skipArmedBy){
-      if(state.drawPile.length){ state.discardPile.push(state.drawPile.shift()); } // silently skip
+      if(state.drawPile.length){ state.discardPile.push(state.drawPile.shift()); }
       const p = state.players.find(p=>p.id===state.skipArmedBy); if(p) p.tokens.skip=false;
       state.skipArmedBy = null; renderSkipNote();
     }
-
     if(!state.drawPile.length){ state.drawPile = shuffle(state.discardPile); state.discardPile=[]; }
     const card = state.drawPile.shift();
     state.currentCard = card; state.discardPile.push(card);
-
     renderCard(card, false);
     applyCrowd(card.crowdDelta || 0);
     saveState();
   }
-
   function scheduleNextBell(){ state.timers.nextBellAt = Date.now() + (state.settings.bellIntervalSeconds * 1000); }
   function fireBellInterrupt(){
     const bellCards = mergedCards().filter(c=>c.category === 'Hepner Bell');
     if(!bellCards.length) return; state.pendingBellCard = bellCards[rand(bellCards.length)];
     scheduleNextBell();
   }
-
   function applyCrowd(delta){
     if(!delta){ renderCrowd(); return; }
     state.crowd = Math.max(0, Math.min(state.settings.crowdMax, state.crowd + delta));
     renderCrowd();
-
     if(state.crowd >= state.settings.crowdMax){
       const storm = state._stormCard || mergedCards().find(c=>c.triggersOnCrowdFull) || null;
       if(storm){ renderCard(storm, true); state.crowd = Math.min(state.settings.crowdReset, state.settings.crowdMax); renderCrowd(); }
@@ -312,7 +281,6 @@
     const p = state.players.find(p=>p.id===playerId); if(!p) return;
     let actual = delta; if(delta>0 && p.tokens.boost){ actual+=2; p.tokens.boost=false; }
     p.points = Math.max(0, p.points + actual); renderPlayers();
-
     if(p.points >= state.settings.winPoints){
       renderCardMessage('🏆 We have a winner!', `${escapeHtml(p.name)} reached ${state.settings.winPoints} points. Start a new round or reset scores to play again.`);
       els.nextBtn.disabled = true;
@@ -403,7 +371,6 @@
 
   // ---------- Deck Manager UI ----------
   function openDeckManager(){
-    // Build category list with counts from the *merged* deck (includes customs)
     const cards = mergedCards();
     const counts = categoriesWithCounts(cards);
     const total = cards.filter(c=>!c.triggersOnCrowdFull).length;
@@ -422,7 +389,6 @@
     els.catList.innerHTML = rows.join('') || '<p class="tiny muted">No categories found.</p>';
     els.deckStatsLabel.textContent = `(${total} drawable cards)`;
 
-    // Wire checkboxes
     $$('#catList input[type="checkbox"]').forEach(cb=>{
       cb.addEventListener('change', ()=>{
         const cat = cb.dataset.cat;
@@ -434,7 +400,6 @@
 
     els.deckDlg?.showModal?.();
   }
-
   function addCustomCard(){
     const category = (els.cardCat.value||'Custom').trim();
     const title = (els.cardTitle.value||'Untitled').trim();
@@ -444,61 +409,32 @@
     const crowd = clampInt(els.cardCrowdDelta.value, -5, 5, 0);
     const token = (els.cardToken.value||'').trim() || undefined;
     const id = `CUST-${Date.now()}-${Math.floor(Math.random()*9999)}`;
-
     if(!title || !text){ els.addCustomNote.textContent = 'Please fill Title and Prompt.'; return; }
-
-    state.deckPrefs.customCards.push({
-      id, category, type:'custom', title, text,
-      actions: { sober, party }, crowdDelta: crowd, token, tags: ['custom']
-    });
+    state.deckPrefs.customCards.push({ id, category, type:'custom', title, text, actions:{sober, party}, crowdDelta:crowd, token, tags:['custom'] });
     saveState();
-
-    // Clear form
     els.cardTitle.value=''; els.cardText.value=''; els.cardSober.value=''; els.cardParty.value=''; els.cardCrowdDelta.value='0'; els.cardToken.value='';
     els.addCustomNote.textContent = `Added “${title}” to ${category}. Will appear next round.`;
-
-    // Update categories immediately
     openDeckManager();
   }
-
-  function exportCustom(){
-    const data = { customCards: state.deckPrefs.customCards || [], enabledCategories: state.deckPrefs.enabledCategories || {} };
-    download('sdsu-deck-custom.json', JSON.stringify(data, null, 2));
-  }
-  function exportMerged(){
-    const data = { meta:(window.DECK?.meta||{}), config:(window.DECK?.config||{}), cards: mergedCards() };
-    download('sdsu-deck-merged.json', JSON.stringify(data, null, 2));
-  }
-  function showImportArea(show){
-    els.importWrap.classList.toggle('hidden', !show);
-    if(show){ els.importText.value=''; }
-  }
+  function exportCustom(){ const data = { customCards: state.deckPrefs.customCards||[], enabledCategories: state.deckPrefs.enabledCategories||{} }; download('sdsu-deck-custom.json', JSON.stringify(data, null, 2)); }
+  function exportMerged(){ const data = { meta:(window.DECK?.meta||{}), config:(window.DECK?.config||{}), cards: mergedCards() }; download('sdsu-deck-merged.json', JSON.stringify(data, null, 2)); }
+  function showImportArea(show){ els.importWrap.classList.toggle('hidden', !show); if(show){ els.importText.value=''; } }
   function applyImport(){
     try{
       const obj = JSON.parse(els.importText.value||'{}');
-      if(Array.isArray(obj.cards)){
-        // treat as full card list overlay
-        state.deckPrefs.customCards = obj.cards;
-        state.deckPrefs.enabledCategories = state.deckPrefs.enabledCategories || {};
-      }else{
-        // treat as prefs/custom bundle
+      if(Array.isArray(obj.cards)){ state.deckPrefs.customCards = obj.cards; state.deckPrefs.enabledCategories = state.deckPrefs.enabledCategories || {}; }
+      else{
         if(Array.isArray(obj.customCards)) state.deckPrefs.customCards = obj.customCards;
         if(obj.enabledCategories && typeof obj.enabledCategories==='object') state.deckPrefs.enabledCategories = obj.enabledCategories;
       }
-      saveState();
-      showImportArea(false);
-      openDeckManager(); // refresh list
-    }catch(e){
-      alert('Invalid JSON. Please check and try again.');
-    }
+      saveState(); showImportArea(false); openDeckManager();
+    }catch(e){ alert('Invalid JSON. Please check and try again.'); }
   }
-  function resetDeckPrefs(){
-    state.deckPrefs = { enabledCategories:{}, customCards:[] };
-    saveState();
-    openDeckManager();
-  }
+  function resetDeckPrefs(){ state.deckPrefs = { enabledCategories:{}, customCards:[] }; saveState(); openDeckManager(); }
 
   // ---------- Events ----------
+  let deferredInstallPrompt = null;
+
   function attachEvents(){
     // Modes
     els.modeButtons.forEach(btn=>{
@@ -570,6 +506,29 @@
     els.cancelImportBtn?.addEventListener('click', (e)=>{ e.preventDefault(); showImportArea(false); });
     els.applyImportBtn?.addEventListener('click', (e)=>{ e.preventDefault(); applyImport(); });
     els.resetDeckBtn?.addEventListener('click', (e)=>{ e.preventDefault(); resetDeckPrefs(); });
+
+    // --- PWA Install (Step 8) ---
+    window.addEventListener('beforeinstallprompt', (e)=>{
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      if(els.installBtn) els.installBtn.style.display = 'inline-block';
+    });
+    els.installBtn?.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      if(!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      try{ await deferredInstallPrompt.userChoice; }catch{}
+      deferredInstallPrompt = null;
+      if(els.installBtn) els.installBtn.style.display = 'none';
+    });
+  }
+
+  // ---------- Service Worker registration ----------
+  function registerServiceWorker(){
+    if('serviceWorker' in navigator){
+      // Use relative path so it works on GitHub Pages subpaths
+      navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+    }
   }
 
   // ---------- Boot ----------
@@ -586,8 +545,10 @@
     }
 
     loadState(); applyTheme(); reflectMode(); attachEvents(); renderAll();
+    registerServiceWorker();
   }
 
   document.addEventListener('DOMContentLoaded', boot);
 })();
+
 
