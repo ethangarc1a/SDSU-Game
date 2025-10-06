@@ -5,11 +5,11 @@
 
   // ---------- State ----------
   const state = {
-    // from Step 2
+    // Step 2 persistence
     mode: 'sober',
     ageVerified: false,
 
-    // new Step 4
+    // Step 4 game state
     players: [],             // [{id, name, points, tokens:{skip:boolean, boost:boolean}}]
     drawPile: [],            // array of cards (shuffled)
     discardPile: [],
@@ -30,9 +30,11 @@
       crowdMax: 10,
       crowdReset: 3,
     },
+
+    // Step 5 options
     options: {
-  keyboardShortcuts: true,
-   },
+      keyboardShortcuts: true,
+    },
   };
 
   // ---------- Elements ----------
@@ -46,7 +48,7 @@
     card: $('#card'),
     ageGate: $('#ageGate'),
 
-    // New Step 4
+    // Step 4
     timer: $('#timer'),
     roundLabel: $('#roundLabel'),
     crowdBar: $('#crowdBar'),
@@ -66,15 +68,15 @@
     winPointsInput: $('#winPointsInput'),
     roundSecondsInput: $('#roundSecondsInput'),
 
+    // Step 5
     howToLink: $('#howToLink'),
-optionsLink: $('#optionsLink'),
-howToDlg: $('#howToDlg'),
-optionsDlg: $('#optionsDlg'),
-optKeyboard: $('#optKeyboard'),
-optBell: $('#optBell'),
-optCrowdMax: $('#optCrowdMax'),
-optCrowdReset: $('#optCrowdReset'),
-
+    optionsLink: $('#optionsLink'),
+    howToDlg: $('#howToDlg'),
+    optionsDlg: $('#optionsDlg'),
+    optKeyboard: $('#optKeyboard'),
+    optBell: $('#optBell'),
+    optCrowdMax: $('#optCrowdMax'),
+    optCrowdReset: $('#optCrowdReset'),
   };
 
   // ---------- Utilities ----------
@@ -93,6 +95,26 @@ optCrowdReset: $('#optCrowdReset'),
     const sec = (s%60).toString().padStart(2,'0');
     return `${m}:${sec}`;
   };
+  function clampInt(s, min, max, fallback){
+    const n = parseInt(s,10);
+    if(Number.isFinite(n)) return Math.min(max, Math.max(min, n));
+    return fallback ?? min;
+  }
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#39;');
+  }
+  function isEditableTarget(ev){
+    const t = ev.target;
+    return t && (
+      t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' ||
+      t.isContentEditable
+    );
+  }
 
   // ---------- Persistence ----------
   function loadState(){
@@ -105,11 +127,13 @@ optCrowdReset: $('#optCrowdReset'),
       if(game && game.players){
         Object.assign(state, game);
       }
+      if(game && game.options){
+        state.options = Object.assign(state.options, game.options);
+      }
     }catch{/* ignore */}
   }
   function saveState(){
     const snapshot = {
-      // don’t persist ticking interval IDs
       players: state.players,
       drawPile: state.drawPile,
       discardPile: state.discardPile,
@@ -125,13 +149,13 @@ optCrowdReset: $('#optCrowdReset'),
       settings: state.settings,
       mode: state.mode,
       ageVerified: state.ageVerified,
+      options: state.options,
     };
     localStorage.setItem('sdsuGameV2', JSON.stringify(snapshot));
-    // keep Step 2’s simpler state for mode/age gate
     localStorage.setItem('sdsuGameState', JSON.stringify({mode: state.mode, ageVerified: state.ageVerified}));
   }
 
-  // ---------- Mode handling (from Step 2, with small tweaks) ----------
+  // ---------- Mode handling ----------
   function reflectMode(){
     document.documentElement.setAttribute('data-mode', state.mode);
     els.modeButtons.forEach(b=>{
@@ -147,8 +171,8 @@ optCrowdReset: $('#optCrowdReset'),
   }
   function requestPartyMode(){
     if(state.ageVerified){ setMode('party'); return; }
-    if(typeof els.ageGate.showModal === 'function'){ els.ageGate.showModal(); }
-    else { els.ageGate.setAttribute('open',''); }
+    if(typeof els.ageGate?.showModal === 'function'){ els.ageGate.showModal(); }
+    else { els.ageGate?.setAttribute('open',''); }
   }
   function setMode(mode){
     state.mode = mode;
@@ -157,12 +181,11 @@ optCrowdReset: $('#optCrowdReset'),
 
   // ---------- Setup / Reset ----------
   function openSetup(){
-    // prime inputs from deck config / existing settings
     const cfg = window.DECK?.config || {};
     els.winPointsInput.value = state.settings.winPoints || cfg.winPoints || 10;
     els.roundSecondsInput.value = state.settings.roundSeconds || cfg.roundSeconds || 90;
-    if(typeof els.setupDlg.showModal === 'function') els.setupDlg.showModal();
-    else els.setupDlg.setAttribute('open','');
+    if(typeof els.setupDlg?.showModal === 'function') els.setupDlg.showModal();
+    else els.setupDlg?.setAttribute('open','');
   }
 
   function beginGame(){
@@ -182,7 +205,7 @@ optCrowdReset: $('#optCrowdReset'),
     state.settings.winPoints = clampInt(els.winPointsInput.value, 5, 50, window.DECK.config.winPoints);
     state.settings.roundSeconds = clampInt(els.roundSecondsInput.value, 30, 600, window.DECK.config.roundSeconds);
 
-    // build deck: exclude auto-trigger card(s)
+    // build deck (exclude auto-trigger card)
     const all = (window.DECK?.cards || []).slice();
     const normal = all.filter(c=>!c.triggersOnCrowdFull);
     state.drawPile = shuffle(normal);
@@ -195,14 +218,8 @@ optCrowdReset: $('#optCrowdReset'),
 
     startRound();
     renderAll();
-    drawNext(); // show first card
+    drawNext();
     saveState();
-  }
-
-  function clampInt(s, min, max, fallback){
-    const n = parseInt(s,10);
-    if(Number.isFinite(n)) return Math.min(max, Math.max(min, n));
-    return fallback ?? min;
   }
 
   function startRound(){
@@ -225,7 +242,6 @@ optCrowdReset: $('#optCrowdReset'),
 
   // ---------- Drawing / Interrupts ----------
   function drawNext(){
-    // If a bell interrupt is pending, show that first
     if(state.pendingBellCard){
       const bell = state.pendingBellCard;
       state.pendingBellCard = null;
@@ -235,20 +251,17 @@ optCrowdReset: $('#optCrowdReset'),
       return;
     }
 
-    // If a Skip was armed, consume it and skip one card
     if(state.skipArmedBy){
       if(state.drawPile.length){
-        state.discardPile.push(state.drawPile.shift()); // skip silently
+        state.discardPile.push(state.drawPile.shift()); // skipped silently
       }
-      // clear skip token from the player who armed it
       const p = state.players.find(p=>p.id===state.skipArmedBy);
       if(p){ p.tokens.skip = false; }
       state.skipArmedBy = null;
-      renderSkipNote(); // clear note
+      renderSkipNote();
     }
 
     if(!state.drawPile.length){
-      // reshuffle discard into draw (without last shown card)
       state.drawPile = shuffle(state.discardPile);
       state.discardPile = [];
     }
@@ -257,11 +270,7 @@ optCrowdReset: $('#optCrowdReset'),
     state.discardPile.push(card);
 
     renderCard(card, false);
-
-    // Apply crowd delta (if any)
     applyCrowd(card.crowdDelta || 0);
-
-    // Win check (after each card you might award points; win is checked when points change)
     saveState();
   }
 
@@ -282,13 +291,11 @@ optCrowdReset: $('#optCrowdReset'),
     state.crowd = Math.max(0, Math.min(state.settings.crowdMax, state.crowd + delta));
     renderCrowd();
 
-    // Storm the Court when crowd full
     if(state.crowd >= state.settings.crowdMax){
       const storm = (window.DECK.cards || []).find(c=>c.triggersOnCrowdFull);
       if(storm){
         renderCard(storm, true);
-        // execute the reset
-        state.crowd = state.settings.crowdReset;
+        state.crowd = Math.min(state.settings.crowdReset, state.settings.crowdMax);
         renderCrowd();
       }
     }
@@ -301,13 +308,12 @@ optCrowdReset: $('#optCrowdReset'),
 
     let actual = delta;
     if(delta > 0 && p.tokens.boost){
-      actual += 2;           // Boost bonus
+      actual += 2;
       p.tokens.boost = false;
     }
     p.points = Math.max(0, p.points + actual);
     renderPlayers();
 
-    // Win?
     if(p.points >= state.settings.winPoints){
       renderCardMessage('🏆 We have a winner!',
         `${escapeHtml(p.name)} reached ${state.settings.winPoints} points. Start a new round or reset scores to play again.`);
@@ -360,7 +366,6 @@ optCrowdReset: $('#optCrowdReset'),
       ${tokenUi}
     `;
 
-    // Wire up token grant (delegated)
     const grantBtn = $('#grantTokenBtn', els.card);
     if(grantBtn){
       grantBtn.addEventListener('click', ()=>{
@@ -413,7 +418,6 @@ optCrowdReset: $('#optCrowdReset'),
       `;
     }).join('');
 
-    // name edits
     $$('.player .name', els.playersWrap).forEach(el=>{
       el.addEventListener('blur', ()=>{
         const card = el.closest('.player'); const id = card?.dataset.id;
@@ -422,7 +426,6 @@ optCrowdReset: $('#optCrowdReset'),
         saveState(); renderSkipOptions();
       });
     });
-    // +/- handlers
     $$('.player .actions .btn', els.playersWrap).forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const delta = parseInt(btn.dataset.delta,10);
@@ -457,7 +460,6 @@ optCrowdReset: $('#optCrowdReset'),
 
   // ---------- Tick loop ----------
   function tick(){
-    // timer
     state.timers.roundLeft -= 1;
     renderTimer();
     if(state.timers.roundLeft <= 0){
@@ -465,10 +467,8 @@ optCrowdReset: $('#optCrowdReset'),
       saveState();
       return;
     }
-    // bell
     if(Date.now() >= state.timers.nextBellAt && !state.pendingBellCard){
       fireBellInterrupt();
-      // Auto-render the interrupt immediately (pause nothing; it just shows a card)
       if(state.pendingBellCard){
         const bell = state.pendingBellCard;
         state.pendingBellCard = null;
@@ -480,7 +480,7 @@ optCrowdReset: $('#optCrowdReset'),
 
   // ---------- Events ----------
   function attachEvents(){
-    // mode buttons from Step 2
+    // Mode
     els.modeButtons.forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const target = btn.dataset.mode;
@@ -493,17 +493,14 @@ optCrowdReset: $('#optCrowdReset'),
       }else setMode('sober');
     });
 
-    // game control
+    // Game controls
     els.startBtn.addEventListener('click', openSetup);
     els.setupDlg?.addEventListener('close', ()=>{
       if(els.setupDlg.returnValue === 'begin') beginGame();
     });
-
     els.nextBtn.addEventListener('click', drawNext);
-
     els.crowdPlus.addEventListener('click', ()=>{ applyCrowd(+1); saveState(); });
     els.crowdMinus.addEventListener('click', ()=>{ applyCrowd(-1); saveState(); });
-
     els.addPlayerBtn.addEventListener('click', ()=>{
       const name = (els.newPlayerName.value || '').trim();
       if(!name) return;
@@ -511,36 +508,81 @@ optCrowdReset: $('#optCrowdReset'),
       els.newPlayerName.value = '';
       renderPlayers(); saveState();
     });
-
     els.resetScoresBtn.addEventListener('click', ()=>{
       state.players.forEach(p=>p.points=0);
       renderPlayers(); saveState();
     });
-
     els.useSkipBtn.addEventListener('click', ()=>{
       const pid = els.skipSelect.value;
       if(!pid) return;
       armSkip(pid);
     });
 
-    // delegate coin/mini actions later if needed (we keep manual for now)
-  }
+    // How-to & Options (Step 5)
+    if(els.howToLink){
+      els.howToLink.addEventListener('click', (e)=>{ e.preventDefault(); els.howToDlg?.showModal?.(); });
+    }
+    if(els.optionsLink){
+      els.optionsLink.addEventListener('click', (e)=>{
+        e.preventDefault();
+        els.optKeyboard.checked = !!state.options.keyboardShortcuts;
+        els.optBell.value = state.settings.bellIntervalSeconds;
+        els.optCrowdMax.value = state.settings.crowdMax;
+        els.optCrowdReset.value = state.settings.crowdReset;
+        els.optionsDlg?.showModal?.();
+      });
+    }
+    els.optionsDlg?.addEventListener('close', ()=>{
+      if(els.optionsDlg.returnValue !== 'save') return;
+      state.options.keyboardShortcuts = !!els.optKeyboard.checked;
+      const bell = clampInt(els.optBell.value, 10, 600, state.settings.bellIntervalSeconds);
+      const cmax = clampInt(els.optCrowdMax.value, 5, 20, state.settings.crowdMax);
+      const creset = clampInt(els.optCrowdReset.value, 0, 10, state.settings.crowdReset);
+      state.settings.bellIntervalSeconds = bell;
+      state.settings.crowdMax = cmax;
+      state.settings.crowdReset = Math.min(creset, cmax);
+      renderCrowd();
+      scheduleNextBell();
+      saveState();
+    });
 
-  // ---------- Security / helpers ----------
-  function escapeHtml(s){
-    return String(s)
-      .replaceAll('&','&amp;')
-      .replaceAll('<','&lt;')
-      .replaceAll('>','&gt;')
-      .replaceAll('"','&quot;')
-      .replaceAll("'",'&#39;');
+    // Keyboard shortcuts (Step 5)
+    document.addEventListener('keydown', (ev)=>{
+      if(!state.options.keyboardShortcuts) return;
+      if(isEditableTarget(ev)) return;
+
+      if(ev.key === 'Escape'){
+        if(els.howToDlg?.open) els.howToDlg.close();
+        if(els.optionsDlg?.open) els.optionsDlg.close();
+        if(els.setupDlg?.open) els.setupDlg.close();
+        return;
+      }
+      if(ev.key.toLowerCase() === 'n'){
+        if(!els.nextBtn.disabled) drawNext();
+        return;
+      }
+      if(ev.key.toLowerCase() === 's'){
+        openSetup();
+        return;
+      }
+      if(ev.key === '['){ applyCrowd(-1); saveState(); return; }
+      if(ev.key === ']'){ applyCrowd(+1); saveState(); return; }
+      if(ev.key >= '1' && ev.key <= '9'){
+        const idx = parseInt(ev.key,10) - 1;
+        const p = state.players[idx];
+        if(p){ addPoints(p.id, ev.altKey ? -1 : +1); }
+      }
+    });
   }
 
   // ---------- Boot ----------
-  function boot(){
-    els.year.textContent = new Date().getFullYear();
+  function renderTimer(){ els.timer.textContent = fmtTime(state.timers.roundLeft); els.roundLabel.textContent = String(state.round); }
+  function renderCrowd(){ els.crowdBar.max = state.settings.crowdMax; els.crowdBar.value = state.crowd; els.crowdVal.textContent = `${state.crowd}/${state.settings.crowdMax}`; }
+  function renderSkipOptions(){ if(!els.skipSelect) return; const options = state.players.filter(p=>p.tokens.skip).map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''); els.skipSelect.innerHTML = options || `<option value="">(no Skip tokens)</option>`; }
 
-    // import deck config defaults
+  function boot(){
+    const y = $('#year'); if(y) y.textContent = new Date().getFullYear();
+
     if(window.DECK?.config){
       const cfg = window.DECK.config;
       state.settings.winPoints = cfg.winPoints ?? state.settings.winPoints;
