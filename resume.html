@@ -20,6 +20,7 @@
     .back{ display:inline-block; margin: 10px 0 0; }
     ul{ margin: 6px 0 0 18px; }
     @media (max-width: 760px){ .cols{ grid-template-columns: 1fr; } }
+    /* Print tweaks come from styles.css @media print */
   </style>
 </head>
 <body>
@@ -28,6 +29,7 @@
     <nav class="nav">
       <a href="./index.html" class="nav-link">Game</a>
       <a href="./resume.html" class="nav-link is-active">Resume</a>
+      <a href="#" id="printBtn" class="nav-link" title="Save as PDF">Print/PDF</a>
       <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
     </nav>
   </header>
@@ -107,6 +109,7 @@
 
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+    document.getElementById('printBtn').addEventListener('click', function(e){ e.preventDefault(); window.print(); });
   </script>
 </body>
 </html>
