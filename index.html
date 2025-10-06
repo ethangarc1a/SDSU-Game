@@ -8,13 +8,9 @@
   <meta name="theme-color" content="#b60202" />
   <link rel="manifest" href="./site.webmanifest" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2718%27 ry=%2718%27 fill=%27%23b60202%27/%3E%3Ctext y=%2780%27 x=%2722%27 font-size=%2780%27 fill=%27white%27%3E🎓%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css?v=3" />
   <script defer src="./deck.js"></script>
   <script defer src="./app.js"></script>
-
-  <!-- Open Graph for better sharing -->
-  <meta property="og:title" content="SDSU Game — Party & Sober Modes" />
-  <meta property="og:description" content="Vanilla JS card game with crowd meter, tokens, and resume page. Runs offline and installable." />
-  <meta property="og:type" content="website" />
 </head>
 <body>
   <header class="site-header">
@@ -24,6 +20,7 @@
       <a href="#" id="deckLink" class="nav-link">Deck</a>
       <a href="#" id="howToLink" class="nav-link">How to Play</a>
       <a href="#" id="optionsLink" class="nav-link">Options</a>
+      <a href="#" id="shareLink" class="nav-link">Share</a>
       <a href="#" id="themeToggle" class="nav-link" title="Toggle theme">Theme</a>
       <a href="#" id="installBtn" class="nav-link" style="display:none;">Install App</a>
       <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
@@ -35,7 +32,7 @@
       <p class="kicker">No installs • Vanilla JS • Mobile-first • Now works offline</p>
       <h2>San Diego State Edition — Play in Sober or 21+ Party Mode</h2>
       <p class="muted">
-        Use “New Game / Round” to start; “Next” draws the next card. Options, Deck Manager, and keyboard shortcuts included.
+        Use “New Game / Round” to start; “Next” draws the next card. Options, Deck Manager, sound/haptics, and shareable links included.
       </p>
     </section>
 
@@ -111,7 +108,7 @@
         <li><strong>Aztec History</strong> — campus-history trivia & safe dares.</li>
         <li><strong>Sunset Cliffs</strong> — risk/reward choices.</li>
       </ul>
-      <p class="tiny muted">“Party Mode” is for players 21+ only. Don’t drink and drive.</p>
+      <p class="tiny muted">“Party Mode” is for 21+ only. Don’t drink and drive.</p>
     </section>
   </main>
 
@@ -182,7 +179,7 @@
         <li><kbd>Esc</kbd> — Close an open dialog</li>
       </ul>
 
-      <p class="tiny muted">Play responsibly. Party Mode is for 21+ only. Hydrate; never drink and drive.</p>
+      <p class="tiny muted">Play responsibly. Party Mode is for 21+ only. Hydrate, never drink and drive.</p>
 
       <div class="dialog-actions">
         <button value="ok" class="btn primary">Got it</button>
@@ -215,6 +212,13 @@
         </div>
       </div>
 
+      <h4>Audio & Haptics</h4>
+      <label class="tiny"><input type="checkbox" id="optSound" /> Enable sound effects (requires a click)</label><br/>
+      <label class="tiny"><input type="checkbox" id="optHaptics" /> Enable haptics (mobile vibration)</label>
+      <div class="row" style="margin-top:6px">
+        <button id="testChimeBtn" class="btn">Test Hepner Bell</button>
+      </div>
+
       <p class="tiny muted">Round length & win points are set in the “New Game / Round” setup dialog.</p>
 
       <div class="dialog-actions">
@@ -242,9 +246,7 @@
   <dialog id="deckDlg" aria-label="Deck Manager">
     <form method="dialog" class="dialog-card">
       <h3>Deck Manager</h3>
-      <p class="tiny muted">
-        Enable/disable categories, add custom cards, or import/export. Changes affect the <em>next</em> round you start.
-      </p>
+      <p class="tiny muted">Enable/disable categories, add custom cards, or import/export. Changes affect the <em>next</em> round you start.</p>
 
       <div class="section">
         <h4>Enabled Categories <span id="deckStatsLabel" class="tiny muted"></span></h4>
