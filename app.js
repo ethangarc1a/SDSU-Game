@@ -11,19 +11,19 @@
 
     // Step 4 game state
     players: [],             // [{id, name, points, tokens:{skip:boolean, boost:boolean}}]
-    drawPile: [],            // array of cards (shuffled)
+    drawPile: [],
     discardPile: [],
     currentCard: null,
     round: 1,
     crowd: 0,
-    skipArmedBy: null,       // playerId who will skip the next card
-    pendingBellCard: null,   // holds a Hepner Bell card when interrupt fires
+    skipArmedBy: null,
+    pendingBellCard: null,
     timers: {
-      roundLeft: 0,          // seconds left in current round
+      roundLeft: 0,
       tickId: null,
-      nextBellAt: 0,         // epoch ms when next bell should fire
+      nextBellAt: 0,
     },
-    settings: {              // defaults filled from DECK.config at boot
+    settings: {
       winPoints: 10,
       roundSeconds: 90,
       bellIntervalSeconds: 180,
@@ -31,15 +31,15 @@
       crowdReset: 3,
     },
 
-    // Step 5 options
+    // Step 5+ options/prefs
     options: {
       keyboardShortcuts: true,
+      theme: 'system',  // 'system'|'light'|'dark' (we toggle light/dark)
     },
   };
 
   // ---------- Elements ----------
   const els = {
-    // From Step 2
     year: $('#year'),
     modeNote: $('#modeNote'),
     modeButtons: $$('.seg-btn'),
@@ -48,7 +48,6 @@
     card: $('#card'),
     ageGate: $('#ageGate'),
 
-    // Step 4
     timer: $('#timer'),
     roundLabel: $('#roundLabel'),
     crowdBar: $('#crowdBar'),
@@ -77,6 +76,10 @@
     optBell: $('#optBell'),
     optCrowdMax: $('#optCrowdMax'),
     optCrowdReset: $('#optCrowdReset'),
+
+    // Step 6
+    themeToggle: $('#themeToggle'),
+    onboardDlg: $('#onboardDlg'),
   };
 
   // ---------- Utilities ----------
@@ -155,6 +158,29 @@
     localStorage.setItem('sdsuGameState', JSON.stringify({mode: state.mode, ageVerified: state.ageVerified}));
   }
 
+  // ---------- Theme ----------
+  function applyTheme(){
+    const root = document.documentElement;
+    if(state.options.theme === 'light'){
+      root.setAttribute('data-theme', 'light');
+      els.themeToggle && (els.themeToggle.textContent = 'Theme: Light');
+    }else if(state.options.theme === 'dark'){
+      root.setAttribute('data-theme', 'dark');
+      els.themeToggle && (els.themeToggle.textContent = 'Theme: Dark');
+    }else{
+      // system
+      root.removeAttribute('data-theme');
+      els.themeToggle && (els.themeToggle.textContent = 'Theme: System');
+    }
+  }
+  function cycleTheme(){
+    const order = ['system','light','dark'];
+    const idx = order.indexOf(state.options.theme);
+    state.options.theme = order[(idx+1)%order.length];
+    applyTheme();
+    saveState();
+  }
+
   // ---------- Mode handling ----------
   function reflectMode(){
     document.documentElement.setAttribute('data-mode', state.mode);
@@ -205,7 +231,6 @@
     state.settings.winPoints = clampInt(els.winPointsInput.value, 5, 50, window.DECK.config.winPoints);
     state.settings.roundSeconds = clampInt(els.roundSecondsInput.value, 30, 600, window.DECK.config.roundSeconds);
 
-    // build deck (exclude auto-trigger card)
     const all = (window.DECK?.cards || []).slice();
     const normal = all.filter(c=>!c.triggersOnCrowdFull);
     state.drawPile = shuffle(normal);
@@ -253,7 +278,7 @@
 
     if(state.skipArmedBy){
       if(state.drawPile.length){
-        state.discardPile.push(state.drawPile.shift()); // skipped silently
+        state.discardPile.push(state.drawPile.shift());
       }
       const p = state.players.find(p=>p.id===state.skipArmedBy);
       if(p){ p.tokens.skip = false; }
@@ -351,6 +376,7 @@
     renderCrowd();
     renderTimer();
     renderSkipOptions();
+    applyTheme();
   }
 
   function renderCard(card, isInterrupt){
@@ -518,7 +544,7 @@
       armSkip(pid);
     });
 
-    // How-to & Options (Step 5)
+    // How-to & Options
     if(els.howToLink){
       els.howToLink.addEventListener('click', (e)=>{ e.preventDefault(); els.howToDlg?.showModal?.(); });
     }
@@ -546,7 +572,10 @@
       saveState();
     });
 
-    // Keyboard shortcuts (Step 5)
+    // Theme toggle
+    els.themeToggle?.addEventListener('click', (e)=>{ e.preventDefault(); cycleTheme(); });
+
+    // Keyboard shortcuts
     document.addEventListener('keydown', (ev)=>{
       if(!state.options.keyboardShortcuts) return;
       if(isEditableTarget(ev)) return;
@@ -555,6 +584,7 @@
         if(els.howToDlg?.open) els.howToDlg.close();
         if(els.optionsDlg?.open) els.optionsDlg.close();
         if(els.setupDlg?.open) els.setupDlg.close();
+        if(els.onboardDlg?.open) els.onboardDlg.close();
         return;
       }
       if(ev.key.toLowerCase() === 'n'){
@@ -581,7 +611,7 @@
   function renderSkipOptions(){ if(!els.skipSelect) return; const options = state.players.filter(p=>p.tokens.skip).map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join(''); els.skipSelect.innerHTML = options || `<option value="">(no Skip tokens)</option>`; }
 
   function boot(){
-    const y = $('#year'); if(y) y.textContent = new Date().getFullYear();
+    els.year && (els.year.textContent = new Date().getFullYear());
 
     if(window.DECK?.config){
       const cfg = window.DECK.config;
@@ -593,11 +623,20 @@
     }
 
     loadState();
+    applyTheme();
     reflectMode();
     attachEvents();
     renderAll();
+
+    // First-run welcome (shows once)
+    try{
+      const seen = localStorage.getItem('sdsuSeenOnboardingV1');
+      if(!seen){
+        els.onboardDlg?.showModal?.();
+        els.onboardDlg?.addEventListener('close', ()=> localStorage.setItem('sdsuSeenOnboardingV1','1'), { once:true });
+      }
+    }catch{/* ignore */}
   }
 
   document.addEventListener('DOMContentLoaded', boot);
 })();
-
