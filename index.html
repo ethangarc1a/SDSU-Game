@@ -17,6 +17,7 @@
       <a href="./resume.html" class="nav-link">Resume</a>
       <a href="#" id="howToLink" class="nav-link">How to Play</a>
       <a href="#" id="optionsLink" class="nav-link">Options</a>
+      <a href="#" id="themeToggle" class="nav-link" title="Toggle theme">Theme</a>
       <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
     </nav>
   </header>
@@ -26,7 +27,7 @@
       <p class="kicker">No installs • Vanilla JS • Mobile-first</p>
       <h2>San Diego State Edition — Play in Sober or 21+ Party Mode</h2>
       <p class="muted">
-        This app is data-driven. Use “New Game / Round” to start; “Next” draws the next card.
+        Use “New Game / Round” to start; “Next” draws the next card. Options and keyboard shortcuts are available.
       </p>
     </section>
 
@@ -211,6 +212,20 @@
       <div class="dialog-actions">
         <button value="cancel" class="btn">Cancel</button>
         <button value="save" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- First-run Welcome dialog -->
+  <dialog id="onboardDlg" aria-label="Welcome">
+    <form method="dialog" class="dialog-card">
+      <h3>Welcome! 👋</h3>
+      <p class="muted tiny">
+        Start with <strong>New Game / Round</strong>. Use <kbd>N</kbd> for Next, <kbd>S</kbd> to open setup, and <kbd>[</kbd>/<kbd>]</kbd> for Crowd.  
+        Open <strong>How to Play</strong> any time from the header.
+      </p>
+      <div class="dialog-actions">
+        <button value="ok" class="btn primary">Let’s play</button>
       </div>
     </form>
   </dialog>
