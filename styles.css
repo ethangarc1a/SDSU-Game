@@ -1,4 +1,5 @@
 :root{
+  /* Light theme defaults */
   --bg: #fafafa;
   --panel: #ffffff;
   --text: #1a1a1a;
@@ -9,6 +10,8 @@
   --radius: 16px;
   --radius-lg: 20px;
 }
+
+/* Respect system dark mode by default */
 @media (prefers-color-scheme: dark){
   :root{
     --bg: #0f1115;
@@ -19,6 +22,14 @@
     --shadow: 0 10px 30px rgba(0,0,0,.5);
     --accent: #ff4d4f;
   }
+}
+
+/* Manual theme override (wins over @media) */
+:root[data-theme="light"]{
+  --bg: #fafafa; --panel:#fff; --text:#1a1a1a; --muted:#666; --border:#e7e7e7; --shadow:0 10px 30px rgba(0,0,0,.08); --accent:#b60202;
+}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --panel:#151821; --text:#eaeaea; --muted:#a1a1a1; --border:#2a2e3a; --shadow:0 10px 30px rgba(0,0,0,.5); --accent:#ff4d4f;
 }
 
 * { box-sizing: border-box; }
@@ -39,7 +50,7 @@ body{
 }
 .site-header{ display:flex; align-items:center; justify-content:space-between; }
 .brand{ font-size: 20px; margin:0; letter-spacing:.3px; }
-.nav{ display:flex; gap:12px; }
+.nav{ display:flex; gap:12px; flex-wrap:wrap; }
 .nav-link{ text-decoration:none; color:var(--text); font-size:14px; padding:6px 10px; border-radius:10px; }
 .nav-link:hover{ background: var(--panel); box-shadow: var(--shadow); }
 .nav-link.disabled{ opacity:.45; pointer-events:none; }
@@ -150,4 +161,11 @@ kbd{
   font-size: 12px; background: var(--panel);
 }
 h4{ margin:12px 0 6px; font-size: 14px; }
+
+/* Resume print tweaks */
+@media print{
+  .site-header, .site-footer, .nav { display:none !important; }
+  .resume { box-shadow:none !important; border:0 !important; padding:0 !important; }
+  body { background:#fff; color:#000; }
+}
 
