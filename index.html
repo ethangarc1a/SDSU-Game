@@ -1,30 +1,90 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-mode="sober">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SDSU Game • Coming Soon</title>
-  <style>
-    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-    body { margin: 0; display: grid; place-items: center; min-height: 100svh; background: #fafafa; }
-    .card { max-width: 720px; padding: 24px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,.08); background: #fff; text-align: center; }
-    h1 { margin: 0 0 8px; }
-    .tag { display:inline-block; padding:4px 10px; border-radius:999px; border:1px solid #ddd; font-size:12px; letter-spacing:.3px; }
-    .row { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:10px; }
-    .muted { color:#666; font-size:14px; }
-    .btn { display:inline-block; margin-top:16px; padding:10px 16px; border-radius:12px; border:1px solid #ddd; text-decoration:none; }
-  </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SDSU Edition — Party & Sober Modes</title>
+  <meta name="description" content="A lightweight web game with Sober and 21+ Party modes, plus an engineering resume (coming soon)." />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%2780%27 x=%2710%27 font-size=%2780%27%3E🎓%3C/text%3E%3C/svg%3E">
+  <script defer src="./app.js"></script>
 </head>
 <body>
-  <main class="card" role="main">
-    <div class="row">
-      <span class="tag">GitHub Pages</span>
-      <span class="tag">No installs</span>
-      <span class="tag">Vanilla JS</span>
-    </div>
-    <h1>San Diego State Edition — Party & Sober Modes</h1>
-    <p class="muted">Step 2 will turn this into a playable mini-app. For now, this page proves deployment works.</p>
-    <a class="btn" href="#" aria-disabled="true">Play (coming soon)</a>
+  <header class="site-header">
+    <h1 class="brand">SDSU Game</h1>
+    <nav class="nav">
+      <!-- Resume page comes in a later step -->
+      <a href="#" aria-disabled="true" class="nav-link disabled" title="Coming soon">Resume</a>
+      <a href="#" aria-disabled="true" class="nav-link disabled" title="Coming soon">How to Play</a>
+      <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="container" role="main">
+    <section class="hero">
+      <p class="kicker">No installs • Vanilla JS • Mobile-first</p>
+      <h2>San Diego State Edition — Play in Sober or 21+ Party Mode</h2>
+      <p class="muted">
+        This step sets up structure and UI. Game logic & unique rules land in the next step.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="row between center">
+        <h3 class="section-title">Mode</h3>
+        <div class="segmented" role="group" aria-label="Game mode">
+          <button class="seg-btn is-active" data-mode="sober" aria-pressed="true">Sober / All-ages</button>
+          <button class="seg-btn" data-mode="party" aria-pressed="false">21+ Party</button>
+        </div>
+      </div>
+      <p class="tiny muted" id="modeNote">
+        Sober Mode swaps alcohol actions for points, water sips, or mini-challenges. Please play responsibly.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h3 class="section-title">Game</h3>
+      <div class="game">
+        <div id="card" class="card" aria-live="polite">
+          <div class="card-title">Not started</div>
+          <p class="card-body muted">Press <em>Start</em> to initialize (actual gameplay arrives in Step 3–4).</p>
+        </div>
+        <div class="controls">
+          <button id="startBtn" class="btn primary">Start</button>
+          <button id="nextBtn" class="btn" disabled>Next</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3 class="section-title">SDSU-flavored rule preview (coming next step)</h3>
+      <ul class="rules">
+        <li><strong>Hepner Bell</strong> — timed chime rounds every few minutes.</li>
+        <li><strong>Trolley Tokens</strong> — transit cards that skip/stack challenges.</li>
+        <li><strong>The Show</strong> — call-and-response hype cards.</li>
+        <li><strong>Kawhi Bounce</strong> — coin “trick-shot” skill challenge.</li>
+        <li><strong>Viejas Arena</strong> — home/away team prompts, crowd meter.</li>
+        <li><strong>Aztec History</strong> — campus-history trivia & safe dares.</li>
+        <li><strong>Sunset Cliffs</strong> — risk/reward choices.</li>
+      </ul>
+      <p class="tiny muted">“Party Mode” is for players 21+ only. Don’t drink and drive.</p>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <p class="tiny muted">© <span id="year"></span> Your Name. Educational demo. San Diego State University marks may be trademarks of their owners.</p>
+  </footer>
+
+  <!-- Age Gate (shown only if switching to Party Mode without prior verification) -->
+  <dialog id="ageGate" aria-label="Age verification">
+    <form method="dialog" class="dialog-card">
+      <h3>Are you 21 or older?</h3>
+      <p class="muted">Party Mode is for 21+ players only. Sober Mode is available for everyone.</p>
+      <div class="dialog-actions">
+        <button value="no" class="btn">No, keep Sober Mode</button>
+        <button value="yes" class="btn primary">Yes, I am 21+</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>
