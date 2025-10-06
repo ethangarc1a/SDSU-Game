@@ -117,3 +117,28 @@ dialog{
 
 /* Footer */
 .site-footer{ opacity:.8; }
+
+/* Step 4 additions */
+.hud { margin-bottom: 8px; }
+.crowd-wrap { display:flex; align-items:center; gap:8px; }
+progress { inline-size: 120px; block-size: 10px; }
+.input{
+  border:1px solid var(--border); background:var(--panel); color:var(--text);
+  padding:8px 10px; border-radius:10px; min-width: 160px;
+}
+.players{
+  display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:10px;
+}
+.player{
+  border:1px solid var(--border); border-radius:12px; padding:10px; background:var(--panel);
+  display:grid; grid-template-columns: 1fr auto; gap:8px; align-items:center;
+}
+.player .name{ font-weight:700; }
+.player .pts{ font-variant-numeric: tabular-nums; }
+.player .actions{ display:flex; gap:6px; }
+.badges{ display:flex; gap:6px; flex-wrap:wrap; }
+.badge{
+  border:1px solid var(--border); border-radius:999px; padding:2px 8px; font-size: 12px;
+}
+.tinybtn{ padding:6px 8px; font-size:12px; }
+
