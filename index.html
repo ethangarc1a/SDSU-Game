@@ -5,10 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>SDSU Edition — Party & Sober Modes</title>
   <meta name="description" content="A lightweight web game with Sober and 21+ Party modes, plus an engineering resume." />
-  <link rel="stylesheet" href="./styles.css" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%2780%27 x=%2710%27 font-size=%2780%27%3E🎓%3C/text%3E%3C/svg%3E">
+  <meta name="theme-color" content="#b60202" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2718%27 ry=%2718%27 fill=%27%23b60202%27/%3E%3Ctext y=%2780%27 x=%2722%27 font-size=%2780%27 fill=%27white%27%3E🎓%3C/text%3E%3C/svg%3E">
   <script defer src="./deck.js"></script>
   <script defer src="./app.js"></script>
+
+  <!-- Open Graph for better sharing -->
+  <meta property="og:title" content="SDSU Game — Party & Sober Modes" />
+  <meta property="og:description" content="Vanilla JS card game with crowd meter, tokens, and resume page. Runs offline and installable." />
+  <meta property="og:type" content="website" />
 </head>
 <body>
   <header class="site-header">
@@ -19,13 +25,14 @@
       <a href="#" id="howToLink" class="nav-link">How to Play</a>
       <a href="#" id="optionsLink" class="nav-link">Options</a>
       <a href="#" id="themeToggle" class="nav-link" title="Toggle theme">Theme</a>
+      <a href="#" id="installBtn" class="nav-link" style="display:none;">Install App</a>
       <a href="https://github.com" target="_blank" rel="noopener" class="nav-link">GitHub</a>
     </nav>
   </header>
 
   <main class="container" role="main">
     <section class="hero">
-      <p class="kicker">No installs • Vanilla JS • Mobile-first</p>
+      <p class="kicker">No installs • Vanilla JS • Mobile-first • Now works offline</p>
       <h2>San Diego State Edition — Play in Sober or 21+ Party Mode</h2>
       <p class="muted">
         Use “New Game / Round” to start; “Next” draws the next card. Options, Deck Manager, and keyboard shortcuts included.
